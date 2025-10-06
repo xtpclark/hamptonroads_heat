@@ -1,0 +1,658 @@
+# config.toml
+
+# --- Community Pulse Event Definitions ---
+# This section will be read by the application at startup.
+# You can add, remove, or edit these events to change the game's flavor.
+# [[hamptonroads.pulse_events]]
+# Replace the existing pulse events in your config.toml with this complete list.
+
+[[hamptonroads.pulse_events]]
+name = "Suspicious Activity Low Rep"
+text = "Notification from Ghent: 'I keep seeing teenagers in hoodies hanging around the 7-Eleven. They look like they're up to no good. Why aren't the police doing anything?!'"
+triggers = ["reputation < 40"]
+chance = 0.3
+effect = { reputation = -1, backlash = 0 }
+
+[[hamptonroads.pulse_events]]
+name = "Police Overreach High Backlash"
+text = "Notification from a local Civil Rights blog: 'NPD's heavy-handed tactics in Wards Corner last night were an overreach. This is not how you build trust with the community.'"
+triggers = ["backlash > 50"]
+chance = 0.4
+effect = { reputation = -1, backlash = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Service Complaint Low Budget"
+text = "Notification from Downtown: 'The trash cans on Granby Street are overflowing again. It's disgusting. Where are our tax dollars going?'"
+triggers = ["budget < 50"]
+chance = 0.25
+effect = { reputation = -1, budget = -0.1 }
+
+[[hamptonroads.pulse_events]]
+name = "Community Support High Rep"
+text = "Notification from a local neighborhood watch: 'The new community policing efforts are really making a difference. We feel heard. Keep up the good work!'"
+triggers = ["reputation > 70"]
+chance = 0.2
+effect = { reputation = 1, backlash = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Pothole Complaint"
+text = "Notification from Larchmont: 'I swear the pothole on my street could swallow a small car! I've reported it three times. DO YOUR JOB, CITY HALL!'"
+triggers = ["budget < 70"]
+chance = 0.2
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Package Theft"
+text = "Notification from Ghent: 'My Amazon package was stolen right off my porch in broad daylight! This neighborhood is getting ridiculous.'"
+triggers = ["reputation < 50"]
+chance = 0.15
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Positive Police Sighting"
+text = "Post on Community Facebook Group: 'Just saw Officer Miller helping an elderly woman change her tire on Colley Ave. We have some good ones on the force! #NPD'"
+triggers = ["reputation > 60"]
+chance = 0.1
+effect = { reputation = 2, backlash = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Complaint about Homelessness"
+text = "Notification from Downtown: 'Another homeless encampment is forming under the overpass. It's an eyesore and I don't feel safe walking past it anymore.'"
+triggers = ["backlash > 30"]
+chance = 0.2
+effect = { reputation = -1, backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Noise Complaint Party"
+text = "Notification from Ocean View: 'Another party on the beach at 2 AM. The noise was unbearable and I found beer cans all over my lawn this morning. This city is going downhill.'"
+triggers = [] # Can happen anytime
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Graffiti Tagging"
+text = "Notification from Park Place: 'Someone tagged the side of the convenience store with graffiti again. It makes the whole block look terrible.'"
+triggers = ["reputation < 55"]
+chance = 0.2
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Slow Police Response"
+text = "Notification from Wards Corner: 'Someone tried to break into my car last night and it took the police 45 minutes to show up. We need more patrols out here!'"
+triggers = [] # Can happen anytime, more likely if police force metric is added
+chance = 0.15
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Aggressive Driving"
+text = "Post on Nextdoor: 'Is it me or has everyone forgotten how to drive? Someone in a huge truck nearly ran me off the road on Tidewater Drive.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Praise for Park Cleanup"
+text = "Comment on City Parks FB Page: 'Took my kids to the park today and it was so clean and well-maintained. Thank you to the city workers for their hard work!'"
+triggers = ["reputation > 65", "budget > 70"]
+chance = 0.15
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Business Closing"
+text = "Local News Alert: 'Beloved downtown restaurant announces closure, citing rising crime and decreased foot traffic.'"
+triggers = ["reputation < 30"]
+chance = 0.1
+effect = { reputation = -3, backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Car Break-in"
+text = "Notification from Freemason: 'Woke up to my car window smashed and my gym bag gone. Second time this year. Feeling really discouraged.'"
+triggers = []
+chance = 0.15
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Stray Animal Complaint"
+text = "Notification: 'There's a stray dog roaming the neighborhood again, looks hungry. Can animal control please come get it?'"
+triggers = ["budget < 80"] # Services stretched thin
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Successful Community Event"
+text = "Local Blogger: 'The weekend's Harborfest was a huge success! Felt safe, clean, and well-organized. A great showcase for our city!'"
+triggers = ["reputation > 75"]
+chance = 0.1
+effect = { reputation = 3, budget = 0.5 } # Positive economic impact
+
+[[hamptonroads.pulse_events]]
+name = "Public Intoxication"
+text = "Notification from Downtown: 'Had to walk around a man passed out on the sidewalk on Granby. It's sad, but also unnerving.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Illegal Dumping"
+text = "Notification: 'Someone dumped a whole mattress and a bunch of trash bags in the alley behind my house. Unbelievable.'"
+triggers = ["budget < 60"]
+chance = 0.15
+effect = { reputation = -2, budget = -0.2 }
+
+[[hamptonroads.pulse_events]]
+name = "Shoplifting Complaint"
+text = "From a Merchant's Association email: 'Shoplifting is up 20% this quarter. We need a greater police presence or our members will have to take drastic measures.'"
+triggers = ["reputation < 45"]
+chance = 0.2
+effect = { reputation = -1, backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Friendly Officer"
+text = "Tweet: 'Shoutout to the NPD officer who was giving out stickers to kids at the Town Point Park. My son was so happy!'"
+triggers = ["reputation > 50"]
+chance = 0.1
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Panhandling Complaint"
+text = "Notification: 'I can't even go to the grocery store without being aggressively panhandled. It's getting out of hand.'"
+triggers = ["backlash > 20"]
+chance = 0.2
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Broken Streetlight"
+text = "Notification: 'The streetlight on my corner has been out for a week. It's pitch black at night and feels unsafe.'"
+triggers = ["budget < 75"]
+chance = 0.2
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Support for 'Aid' Action"
+text = "Letter to the Editor: 'I applaud the city's recent investment in aid programs. Addressing root causes is the only real long-term solution.'"
+triggers = ["reputation > 60"] # Player must have taken 'aid' recently
+chance = 0.1
+effect = { reputation = 2, backlash = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Opposition to 'Aid' Action"
+text = "Caller on a talk radio show: 'Another handout? These aid programs are just magnets for more problems. We need law and order, not coddling!'"
+triggers = ["backlash > 40"]
+chance = 0.15
+effect = { reputation = -1, backlash = 3 }
+
+[[hamptonroads.pulse_events]]
+name = "Fast Police Response"
+text = "Notification: 'My neighbor's alarm went off and the police were here in under 3 minutes. Very impressive and reassuring!'"
+triggers = ["reputation > 50"]
+chance = 0.1
+effect = { reputation = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Perceived Over-Policing"
+text = "Notification: 'Saw two kids get stopped and questioned for just riding their bikes. Seemed like harassment to me.'"
+triggers = ["backlash > 40"]
+chance = 0.25
+effect = { backlash = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "New Business Opening"
+text = "Local News: 'New high-end boutique opens in Ghent, owner cites optimism in the neighborhood's direction.'"
+triggers = ["reputation > 70"]
+chance = 0.05
+effect = { reputation = 1, budget = 0.1 }
+
+[[hamptonroads.pulse_events]]
+name = "Vandalism at Park"
+text = "Notification: 'Someone vandalized the playground equipment at the park. Now my kids can't use the slide. So frustrating.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Unleashed Dog Complaint"
+text = "Nextdoor post: 'To the person with the large German Shepherd who lets it run off-leash at the park: it is NOT friendly and you need to control your animal!'"
+triggers = []
+chance = 0.1
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Drug Paraphernalia Found"
+text = "Notification from a parent: 'Found a used needle near the school playground this morning. Terrifying. The city MUST do something.'"
+triggers = ["reputation < 40"]
+chance = 0.15
+effect = { reputation = -3, backlash = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Support for 'Sweep' Action"
+text = "Comment on News Article: 'Glad to see the police are finally cleaning up Wards Corner. It's about time they got tough.'"
+triggers = ["backlash < 30"] # More likely if backlash is low
+chance = 0.15
+effect = { reputation = 1, backlash = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Traffic Light Outage"
+text = "Traffic Alert: 'The traffic lights at the intersection of Military Hwy and Norview are out. Expect major delays.'"
+triggers = ["budget < 65"]
+chance = 0.1
+effect = { reputation = -1, backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Open Hydrant"
+text = "Notification: 'Kids opened a fire hydrant on our street to cool off. The water pressure in my house is zero now.'"
+triggers = []
+chance = 0.05
+effect = { budget = -0.1 }
+
+[[hamptonroads.pulse_events]]
+name = "Bicycle Theft"
+text = "Notification: 'My bike was stolen from the rack outside my apartment, and I had a U-lock on it!'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Water Main Break"
+text = "City Alert: 'Crews are responding to a major water main break on Hampton Blvd. Some residents may experience service disruptions.'"
+triggers = []
+chance = 0.05
+effect = { reputation = -2, budget = -1.0 }
+
+[[hamptonroads.pulse_events]]
+name = "Utility Scam Warning"
+text = "Police Alert: 'NPD warns residents of a new phone scam where callers pretend to be from Dominion Energy and demand payment.'"
+triggers = []
+chance = 0.05
+effect = { reputation = 1 } # Proactive policing
+
+[[hamptonroads.pulse_events]]
+name = "Fender Bender"
+text = "Notification: 'Just saw a fender bender on the interstate. Traffic is already backing up.'"
+triggers = []
+chance = 0.1
+effect = {} # No effect, just flavor
+
+[[hamptonroads.pulse_events]]
+name = "Porch Pirate Sighting"
+text = "Post with video: 'Caught this guy on my Ring camera stealing packages in the neighborhood. Keep an eye out!'"
+triggers = ["reputation < 60"]
+chance = 0.15
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Positive School Report"
+text = "Local News: 'Maury High School receives national recognition for its debate team. A point of pride for the city!'"
+triggers = []
+chance = 0.05
+effect = { reputation = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Zoning Dispute"
+text = "Nextdoor Rant: 'I can't believe the city is even CONSIDERING a zoning variance for that monstrous apartment building. It will destroy our neighborhood's character!'"
+triggers = []
+chance = 0.1
+effect = { backlash = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Successful Charity Drive"
+text = "Community Announcement: 'The food bank's holiday drive was a huge success, exceeding all goals. Thanks to everyone who donated!'"
+triggers = ["reputation > 50"]
+chance = 0.1
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Bad Parking"
+text = "Picture post: 'To the owner of this BMW, this is not a parking spot. Learn how to park.'"
+triggers = []
+chance = 0.15
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Power Outage"
+text = "Notification: 'Power just went out in our entire block. Anyone know what's going on?'"
+triggers = []
+chance = 0.05
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Teenage Prank"
+text = "Notification: 'Some kids toilet-papered half the trees on our street last night. Funny, I guess, but who is going to clean it up?'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Dispute Over Dog Park"
+text = "Heated Nextdoor thread: 'The small dog side of the dog park is NOT for your giant golden doodle to run wild! Some people are so inconsiderate!'"
+triggers = []
+chance = 0.15
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Construction Noise"
+text = "Notification: 'Does the construction on the new building downtown have to start at 7 AM on a Saturday? Some of us are trying to sleep!'"
+triggers = []
+chance = 0.1
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Hit and Run"
+text = "Notification: 'Someone hit my parked car overnight and just drove off. If anyone has security footage, please let me know.'"
+triggers = ["reputation < 50"]
+chance = 0.1
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Library Program Praise"
+text = "Tweet: 'The summer reading program at the public library is fantastic. A great, free resource for kids in our city.'"
+triggers = ["budget > 50"]
+chance = 0.1
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Speeding Complaint"
+text = "Notification: 'People fly down my residential street like it's a racetrack. We need speed bumps before a child gets hurt.'"
+triggers = []
+chance = 0.2
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Protest Downtown"
+text = "News Alert: 'A small group of protestors has gathered outside City Hall to protest the latest tax hike. Traffic is being diverted.'"
+triggers = ["backlash > 60"]
+chance = 0.15
+effect = { backlash = 3, reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Road Rage Incident"
+text = "Notification: 'Just witnessed a scary road rage incident. A guy got out of his car and started screaming at another driver. Things are tense out there.'"
+triggers = ["backlash > 50"]
+chance = 0.1
+effect = { backlash = 1, reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "ATM Skimmer Found"
+text = "Police Warning: 'An ATM skimmer was found at a gas station on Little Creek Rd. Check your bank statements and be vigilant.'"
+triggers = []
+chance = 0.05
+effect = {} # Informational
+
+[[hamptonroads.pulse_events]]
+name = "Neighborhood Beautification"
+text = "Community Group Post: 'Thanks to all the volunteers who came out to plant flowers at the park entrance! It looks wonderful.'"
+triggers = ["reputation > 60"]
+chance = 0.1
+effect = { reputation = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Suspicious Van"
+text = "Notification: 'There's a white van without any markings that's been parked on our street for three days. It's creeping me out.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Lost Pet"
+text = "Nextdoor Post: 'Has anyone seen our cat, Mittens? He's an orange tabby and he slipped out last night. We're heartbroken.'"
+triggers = []
+chance = 0.1
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Found Pet"
+text = "Nextdoor Post: 'Found this sweet dog wandering near the school. No collar. Is he yours? Taking him to the shelter in the morning.'"
+triggers = []
+chance = 0.1
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Fireworks Complaint"
+text = "Notification: 'Is it the 4th of July? No? Then why are people setting off fireworks at 11 PM on a Tuesday?!'"
+triggers = []
+chance = 0.15
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Positive Restaurant Review"
+text = "Food Blogger: 'Just had the best meal at that new place in Ghent. The culinary scene in this city is really taking off!'"
+triggers = ["reputation > 65"]
+chance = 0.05
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Complaint about Bicyclists"
+text = "Notification: 'Bicyclists on the sidewalk need to slow down! This isn't the Tour de France, you nearly ran over my toddler.'"
+triggers = []
+chance = 0.1
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Complaint about Cars"
+text = "Notification: 'Drivers need to watch out for cyclists! I have a right to be on the road too, you know!'"
+triggers = []
+chance = 0.1
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Bus Stop Vandalism"
+text = "Notification: 'Someone shattered the glass at the bus stop on Tidewater Dr again. Looks awful.'"
+triggers = ["reputation < 40"]
+chance = 0.15
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Praise for Fire Dept"
+text = "Tweet: 'Huge thanks to @NorfolkFireDept for their incredibly fast response to the fire alarm in our building. True professionals.'"
+triggers = []
+chance = 0.05
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Fallen Tree Branch"
+text = "City Services Request: 'A huge tree branch fell and is blocking the sidewalk on my street. Can someone please come clear it?'"
+triggers = []
+chance = 0.1
+effect = { budget = -0.1 }
+
+[[hamptonroads.pulse_events]]
+name = "Argument in Public"
+text = "Notification: 'Watching two people scream at each other over a parking spot. Stay classy, Norfolk.'"
+triggers = ["backlash > 30"]
+chance = 0.1
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "School Fundraiser"
+text = "Announcement: 'Come support the Granby High School car wash this Saturday! All proceeds go to the band program.'"
+triggers = []
+chance = 0.1
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Coyotes Sighting"
+text = "Notification: 'Just saw a coyote in my backyard. Keep your small pets inside, everyone!'"
+triggers = []
+chance = 0.05
+effect = { } # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Catalytic Converter Theft"
+text = "Notification from Ghent: 'Add me to the list. They stole the catalytic converter off my Prius last night right in my driveway.'"
+triggers = ["reputation < 50"]
+chance = 0.1
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "City Council Gaffe"
+text = "News Headline: 'Councilman's off-color joke at public meeting draws criticism.'"
+triggers = []
+chance = 0.05
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Successful Police Operation"
+text = "NPD Press Release: 'NPD announces major bust, dismantling a drug trafficking ring operating in the city.'"
+triggers = ["reputation > 50"]
+chance = 0.05
+effect = { reputation = 3, backlash = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Overdose Spike Warning"
+text = "Health Dept. Alert: 'The city has seen a spike in overdoses in the last 48 hours, likely due to a tainted batch of heroin. Be vigilant.'"
+triggers = []
+chance = 0.1
+effect = { backlash = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "Farmer's Market"
+text = "Notification: 'Don't forget the farmer's market is this weekend! Love seeing the community come together like this.'"
+triggers = ["reputation > 60"]
+chance = 0.1
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Public Art Vandalism"
+text = "Notification: 'Someone spray-painted over one of the mermaid statues downtown. So disrespectful.'"
+triggers = ["backlash > 20"]
+chance = 0.15
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Business Tax Complaint"
+text = "From a business owner: 'The city's business taxes are killing me. I'm thinking of moving my shop to Chesapeake.'"
+triggers = ["budget < 40"] # Implies high taxes
+chance = 0.1
+effect = { reputation = -1, budget = -0.5 } # Negative economic outlook
+
+[[hamptonroads.pulse_events]]
+name = "Recycling Not Picked Up"
+text = "Notification: 'It's a day after recycling day and the bins are still on the curb. What's the deal?'"
+triggers = ["budget < 60"]
+chance = 0.2
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Property Value Increase"
+text = "Zillow Alert: 'Good news! Your home's estimated value has increased by 3% in the last quarter.'"
+triggers = ["reputation > 75"]
+chance = 0.05
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Property Value Decrease"
+text = "Zillow Alert: 'Your home's estimated value has decreased by 2% in the last quarter.'"
+triggers = ["reputation < 25"]
+chance = 0.1
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Jet Noise"
+text = "Notification: 'The jets from the naval base are SO LOUD today. Shaking my whole house!'"
+triggers = []
+chance = 0.2
+effect = {} # Flavor - the sound of freedom
+
+[[hamptonroads.pulse_events]]
+name = "Flooding on Street"
+text = "Notification: 'It rained for 20 minutes and my street is already completely flooded. The storm drains are useless.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1, backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Tourist Complaint"
+text = "TripAdvisor Review: 'Visited the waterfront, was harassed by panhandlers. Not the family-friendly experience we were hoping for.'"
+triggers = ["reputation < 50"]
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Tourist Praise"
+text = "Instagram Post: 'Had an amazing time in Norfolk this weekend! The people are so friendly and the city is beautiful.'"
+triggers = ["reputation > 70"]
+chance = 0.05
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Car Alarm Going Off"
+text = "Notification: 'Whose car alarm has been going off for the last hour? Please turn it off!'"
+triggers = []
+chance = 0.15
+effect = { backlash = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Light Rail Delay"
+text = "HRT Alert: 'The Tide is experiencing minor delays due to a mechanical issue. Please allow for extra travel time.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Someone Mowing Lawn at 7AM"
+text = "Nextdoor Rant: 'To my dear neighbor who thinks 7 AM on a Sunday is a good time to mow their lawn: it is not.'"
+triggers = []
+chance = 0.1
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Crossing Guard Praise"
+text = "Post from a parent: 'Just want to give a shoutout to the amazing crossing guard at the elementary school. She knows all the kids' names!'"
+triggers = ["reputation > 60"]
+chance = 0.05
+effect = { reputation = 1 }
+
+[[hamptonroads.pulse_events]]
+name = "Stolen Political Sign"
+text = "Notification: 'Someone stole the political sign out of my yard. So much for friendly debate.'"
+triggers = ["backlash > 60"]
+chance = 0.1
+effect = { backlash = 2 }
+
+[[hamptonroads.pulse_events]]
+name = "School Bake Sale"
+text = "Announcement: 'Support the local PTA! Bake sale at the middle school this Friday. All proceeds go to new library books.'"
+triggers = []
+chance = 0.1
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Complaint about Scooter Riders"
+text = "Notification: 'A group of people on those rental scooters just blew through a red light. Someone's going to get hurt.'"
+triggers = []
+chance = 0.15
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Bridge Lift"
+text = "Notification: 'Heads up, the drawbridge is up. Going to be stuck here for a while.'"
+triggers = []
+chance = 0.1
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Rat Sighting"
+text = "Notification from Ghent: 'Just saw a rat the size of a cat run into the alley. The city needs to do something about the pest problem.'"
+triggers = ["budget < 50"]
+chance = 0.15
+effect = { reputation = -2 }
+
+[[hamptonroads.pulse_events]]
+name = "Smell from the River"
+text = "Notification: 'What is that awful smell coming from the river today? Smells like something died.'"
+triggers = []
+chance = 0.1
+effect = { reputation = -1 }
+
+[[hamptonroads.pulse_events]]
+name = "Lost Wallet"
+text = "Post: 'Lost my wallet downtown yesterday. All my cards are in it. If found, please contact me!'"
+triggers = []
+chance = 0.05
+effect = {} # Flavor
+
+[[hamptonroads.pulse_events]]
+name = "Wallet Returned"
+text = "Post Update: 'A kind stranger found my wallet and turned it in! Everything was still there. My faith in humanity is restored!'"
+triggers = ["reputation > 60"]
+chance = 0.05
+effect = { reputation = 2 }

@@ -1,0 +1,16 @@
+aiohttp==3.9.5
+beautifulsoup4==4.12.3
+cachetools==5.5.0
+cryptography==43.0.1
+Flask==2.3.3
+folium
+GeoAlchemy2
+geopandas
+geopy
+gunicorn==22.0.0
+psycopg2-binary==2.9.9
+PyJWT==2.8.0
+python-dotenv==1.0.1
+requests==2.32.3
+sqlalchemy
+toml

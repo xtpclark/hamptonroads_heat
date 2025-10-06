@@ -1,0 +1,128 @@
+# major_events.toml - Enhanced Major Interactive Events
+
+# === POLITICAL EVENTS ===
+
+[[hamptonroads.major_events]]
+name = "Corruption Investigation"
+text = "FEDERAL INVESTIGATION: The FBI has launched a corruption probe into city contracts. Media trucks surround City Hall. Your response will define your legacy."
+triggers = ["reputation < 35"]
+chance = 0.12
+handler = "handle_corruption_event"
+choices = [
+    { id = "cooperate", text = "Full Cooperation - Open All Records (-$10M)" },
+    { id = "lawyer_up", text = "Hire Expensive Defense Lawyers (-$15M)" },
+    { id = "obstruct", text = "Stonewall & Deny Everything" }
+]
+
+[[hamptonroads.major_events]]
+name = "Annual Property Assessment"
+text = "BUDGET DECISION: The annual property assessment is complete. Tax revenue projections are in. The City Council awaits your recommendation."
+triggers = ["reputation > 20"]
+chance = 0.08
+handler = "handle_generic_event"
+choices = [
+    { id = "keep_rate", text = "Keep Current Rate (+$25M, High Backlash)", effect = { budget = 25, backlash = 20, reputation = -10 } },
+    { id = "modest_relief", text = "Modest Tax Relief (+$10M, Low Backlash)", effect = { budget = 10, backlash = 5, reputation = 0 } },
+    { id = "hold_line", text = "Freeze Rates (+$0, High Reputation)", effect = { budget = 0, backlash = -5, reputation = 15 } }
+]
+
+[[hamptonroads.major_events]]
+name = "Council Resignation"
+text = "POLITICAL CRISIS: Citing a 'crisis of confidence' in your leadership, a key city council member has resigned, triggering a special election."
+triggers = ["reputation < 20", "backlash > 70"]
+handler = "handle_generic_event"
+chance = 0.15
+choices = [
+    { id = "special_election_friend", text = "Appoint a Loyal Ally to the Seat", effect = { budget = -20, reputation = -20, backlash = 25 } },
+    { id = "special_election_hold", text = "Hold Costly Special Election (-$30M)", effect = { budget = -30, reputation = 10, backlash = 5 } },
+    { id = "special_election_nothing", text = "Leave Seat Vacant Until Regular Election", effect = { budget = 0, reputation = -10, backlash = 10 } }
+]
+
+# === CRITICAL INCIDENTS ===
+
+[[hamptonroads.major_events]]
+name = "Officer-Involved Shooting"
+text = "BREAKING NEWS: A volatile officer-involved shooting has occurred. The victim's family is demanding answers. Protesters are gathering. The public demands an immediate response."
+triggers = ["backlash > 40"]
+chance = 0.15
+handler = "handle_shooting_event"
+choices = [
+    { id = "release_footage", text = "Release Bodycam Footage Immediately" },
+    { id = "delay_release", text = "Issue Vague Statement, Delay Release" },
+    { id = "suspend_officer", text = "Suspend Officer Pending Investigation" }
+]
+
+# === ENVIRONMENTAL EVENTS ===
+
+[[hamptonroads.major_events]]
+name = "Hurricane Watch"
+text = "WEATHER ALERT: A Category 2 hurricane is tracking towards Hampton Roads. Estimated landfall in 36 hours. Public anxiety rising. Emergency response required."
+triggers = []
+handler = "handle_generic_event"
+chance = 0.03
+choices = [
+    { id = "hurricane_watch_prepare", text = "Full Emergency Mobilization (-$2M)", effect = { budget = -2, reputation = 25, backlash = 10 } },
+    { id = "hurricane_watch_nothing", text = "Wait and See Approach", effect = { budget = 0, reputation = -50, backlash = 25 } }
+]
+
+[[hamptonroads.major_events]]
+name = "Nuisance Flooding"
+text = "INFRASTRUCTURE ALERT: Severe king tide flooding in Ghent and waterfront areas. Roads closed, businesses disrupted."
+triggers = [] 
+handler = "handle_generic_event"
+chance = 0.12
+choices = [
+    { id = "emergency_response", text = "Emergency Response & Cleanup (-$2M)", effect = { budget = -2, reputation = 5 } },
+    { id = "do_nothing", text = "Let It Drain Naturally", effect = { reputation = -5, backlash = 8 } }
+]
+
+[[hamptonroads.major_events]]
+name = "Federal Infrastructure Grant"
+text = "FEDERAL WINDFALL: Congress has awarded Norfolk a surprise $20M infrastructure grant. How will you allocate these funds?"
+triggers = ["reputation > 60"]
+chance = 0.05
+handler = "handle_generic_event"
+choices = [
+    { id = "fund_flooding", text = "Invest in Flood Mitigation Infrastructure", effect = { budget = 20, reputation = 5 } },
+    { id = "fund_roads", text = "Repair Roads & Bridges", effect = { budget = 20, reputation = 5, backlash = -5 } },
+    { id = "absorb_funds", text = "Absorb into General Budget", effect = { budget = 20 } }
+]
+
+# === SOCIAL EVENTS ===
+
+[[hamptonroads.major_events]]
+name = "Population Influx"
+text = "DEMOGRAPHIC SHIFT: Census data shows unexpected population growth. Housing costs rising, infrastructure strained, but economic activity increasing."
+triggers = ["reputation > 55"]
+chance = 0.06
+handler = "handle_generic_event"
+choices = [
+    { id = "welcome_growth", text = "Embrace Growth - Zone for Housing", effect = { budget = 3, reputation = -5, backlash = 15 } },
+    { id = "restrict_growth", text = "Restrict Development - Preserve Character", effect = { budget = -2, reputation = 5, backlash = -5 } }
+]
+
+[[hamptonroads.major_events]]
+name = "Major Employer Closure"
+text = "ECONOMIC CRISIS: A major employer announced sudden closure. 500 jobs lost. Ripple effects expected across the local economy."
+triggers = ["budget < 50"]
+chance = 0.08
+handler = "handle_generic_event"
+choices = [
+    { id = "emergency_aid", text = "Emergency Job Training & Placement (-$8M)", effect = { budget = -8, reputation = 15, backlash = -10 } },
+    { id = "tax_incentive", text = "Offer Tax Breaks to Attract Replacement (-$5M)", effect = { budget = -5, reputation = 5 } },
+    { id = "market_forces", text = "Let the Market Adjust", effect = { reputation = -15, backlash = 20 } }
+]
+
+# === ACCOUNTABILITY EVENTS ===
+
+[[hamptonroads.major_events]]
+name = "Use of Force Report"
+text = "ACCOUNTABILITY MOMENT: Annual use-of-force statistics released. Community groups demanding explanation for disparities in enforcement data."
+triggers = ["backlash > 35"]
+chance = 0.10
+handler = "handle_generic_event"
+choices = [
+    { id = "acknowledge_disparities", text = "Acknowledge Issues, Promise Reform", effect = { reputation = 10, backlash = -15 } },
+    { id = "defend_statistics", text = "Defend Officers, Cite Crime Rates", effect = { reputation = -10, backlash = 20 } },
+    { id = "commission_study", text = "Commission Independent Study (-$4M)", effect = { budget = -4, reputation = 5, backlash = -8 } }
+]

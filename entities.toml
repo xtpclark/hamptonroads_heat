@@ -1,0 +1,44 @@
+# entities.toml
+
+[[hamptonroads.entities]]
+name = "Sentara Norfolk General Hospital"
+type = "hospital"
+locality = "Norfolk"
+# Note: coords are [longitude, latitude]
+coords = [-76.28, 36.85]
+
+[[hamptonroads.entities]]
+name = "Norfolk PD HQ"
+type = "PD"
+locality = "Norfolk"
+coords = [-76.30, 36.87]
+
+[[hamptonroads.entities]]
+name = "Metropolitan Funeral Service"
+type = "funeral"
+locality = "Norfolk"
+coords = [-76.29, 36.86]
+
+[[hamptonroads.entities]]
+name = "Graves Funeral Home"
+type = "funeral"
+locality = "Norfolk"
+coords = [-76.27, 36.87]
+
+[[hamptonroads.entities]]
+name = "Riddick Funeral Service"
+type = "funeral"
+locality = "Norfolk"
+coords = [-76.24, 36.86]
+
+[[hamptonroads.entities]]
+name = "Hollomon-Brown Funeral Home"
+type = "funeral"
+locality = "Norfolk"
+coords = [-76.25, 36.90]
+
+[[hamptonroads.entities]]
+name = "Altmeyer Funeral Homes"
+type = "funeral"
+locality = "Norfolk"
+coords = [-76.05, 36.86]

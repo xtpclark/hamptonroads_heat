@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgis/postgis:15-3.5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-hamptonroads}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data:z
+    networks:
+      app-network:
+        aliases:
+          - postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  app:
+    build:
+      context: .
+      args:
+        HOST_UID: 1000
+        HOST_GID: 1000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-hamptonroads}
+    # The volume mount for entrypoint.sh is removed
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
+volumes:
+  pgdata:

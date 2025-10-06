@@ -1,0 +1,181 @@
+# actions.toml - Balanced Policy Actions
+
+# === ENFORCEMENT-FOCUSED ACTIONS ===
+
+[[hamptonroads.actions]]
+id = "sweep"
+name = "Hotspot Sweep"
+cost = 6.0
+description = "Aggressive enforcement operation targeting high-crime areas. Immediate results but damages community relations."
+log_text = "Major enforcement sweep conducted in {locality}"
+handler = "handle_sweep_action"
+
+[hamptonroads.actions.effects]
+reputation = -5
+backlash = 12
+
+[[hamptonroads.actions]]
+id = "increase_patrols"
+name = "Increase Patrols"
+cost = 3.5
+description = "Enhanced police presence in hotspots. Visible deterrent with moderate community impact."
+log_text = "Patrol presence increased in {locality} hotspots"
+handler = "handle_increase_patrols_action"
+
+[hamptonroads.actions.effects]
+reputation = -1
+backlash = 4
+
+[[hamptonroads.actions]]
+id = "task_force"
+name = "Specialized Task Force"
+cost = 8.0
+description = "Form a dedicated unit for the most prevalent crime type. Very effective but expensive and controversial."
+log_text = "Task force deployed to target specific criminal activity in {locality}"
+handler = "handle_task_force_action"
+
+[hamptonroads.actions.effects]
+reputation = -8
+backlash = 18
+
+[[hamptonroads.actions]]
+id = "technology"
+name = "Surveillance Technology"
+cost = 7.0
+description = "Deploy cameras and monitoring systems. Reduces property crime but raises privacy concerns."
+log_text = "Surveillance infrastructure deployed in {locality}"
+handler = "handle_technology_action"
+
+[hamptonroads.actions.effects]
+reputation = -4
+backlash = 22
+
+# === COMMUNITY-FOCUSED ACTIONS ===
+
+[[hamptonroads.actions]]
+id = "community_policing"
+name = "Community Policing"
+cost = 5.0
+description = "Officers walk beats and engage with residents. Builds trust slowly, minimal immediate crime impact."
+log_text = "Community policing program expanded in {locality}"
+handler = "handle_community_policing_action"
+
+[hamptonroads.actions.effects]
+reputation = 12
+backlash = -10
+
+[[hamptonroads.actions]]
+id = "crisis_training"
+name = "De-escalation Training"
+cost = 4.0
+description = "Train officers in crisis intervention and mental health response. Prevents violent encounters."
+log_text = "Crisis intervention training completed for {locality} officers"
+handler = "handle_crisis_training_action"
+
+[hamptonroads.actions.effects]
+reputation = 8
+backlash = -6
+
+# === PREVENTION & SOCIAL PROGRAMS ===
+
+[[hamptonroads.actions]]
+id = "aid"
+name = "Social Services"
+cost = 5.0
+description = "Fund addiction treatment, housing assistance, and mental health services. Long-term investment with delayed results."
+log_text = "Social service programs expanded in {locality}"
+handler = "handle_aid_action"
+
+[hamptonroads.actions.effects]
+reputation = 8
+backlash = -4
+
+[[hamptonroads.actions]]
+id = "youth_programs"
+name = "Youth Intervention"
+cost = 4.5
+description = "After-school programs, job training, and mentoring. Prevents future crime but takes time to show results."
+log_text = "Youth intervention programs launched in {locality}"
+handler = "handle_youth_programs_action"
+
+[hamptonroads.actions.effects]
+reputation = 10
+backlash = -3
+
+# === ECONOMIC DEVELOPMENT ===
+
+[[hamptonroads.actions]]
+id = "business_incentives"
+name = "Business Development"
+cost = 6.0
+description = "Tax breaks and grants to attract businesses to high-crime areas. Creates jobs but controversial spending."
+log_text = "Business development package approved for {locality}"
+handler = "handle_business_incentives_action"
+
+[hamptonroads.actions.effects]
+reputation = 5
+backlash = 8
+
+[[hamptonroads.actions]]
+id = "infrastructure"
+name = "Infrastructure Investment"
+cost = 5.5
+description = "Repair streets, improve lighting, clean up blight. Visible improvements boost morale."
+log_text = "Infrastructure improvements underway in {locality}"
+handler = "handle_infrastructure_action"
+
+[hamptonroads.actions.effects]
+reputation = 12
+backlash = -2
+
+# === TRANSPARENCY & ACCOUNTABILITY ===
+
+[[hamptonroads.actions]]
+id = "transparency"
+name = "Crime Statistics Report"
+cost = 1.5
+description = "Publish detailed crime data. Cheap reputation boost if crime is low, backfires if crime is high."
+log_text = "Quarterly crime transparency report published for {locality}"
+handler = "handle_transparency_action"
+
+[hamptonroads.actions.effects]
+reputation = 8
+backlash = 0
+
+[[hamptonroads.actions]]
+id = "accountability_board"
+name = "Civilian Review Board"
+cost = 3.0
+description = "Independent oversight of police conduct. Builds trust but costs political capital with law enforcement."
+log_text = "Civilian accountability board established in {locality}"
+handler = "handle_accountability_action"
+
+[hamptonroads.actions.effects]
+reputation = 15
+backlash = -8
+
+# === BUDGET CONSERVATION ===
+
+[[hamptonroads.actions]]
+id = "do_nothing"
+name = "Hold the Line"
+cost = 0.0
+description = "Conserve budget and maintain status quo. Sometimes the best action is no action."
+log_text = "No new initiatives launched in {locality} this period"
+handler = "handle_no_action"
+
+[hamptonroads.actions.effects]
+reputation = -3
+backlash = 5
+
+[[hamptonroads.actions]]
+id = "traffic_enforcement"
+name = "Traffic Safety Campaign"
+cost = 2.0
+description = "Deploy traffic enforcement and safety education. Reduces hit-and-runs and DUIs."
+log_text = "Traffic safety campaign launched in {locality}"
+handler = "handle_traffic_action"
+
+[hamptonroads.actions.effects]
+reputation = 3
+backlash = 4

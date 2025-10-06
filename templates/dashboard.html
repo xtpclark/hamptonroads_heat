@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hampton Roads Heat</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+            --dark-bg: #34495e;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+        }
+        
+        /* LEFT SIDEBAR - Status and Info */
+        #left-sidebar {
+            width: 20%;
+            min-width: 250px;
+            background: white;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* MAP CONTAINER */
+        #map-container { 
+            height: 100vh; 
+            flex: 1;
+            border-left: 3px solid var(--primary);
+            border-right: 3px solid var(--primary);
+        }
+        
+        #map-frame { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+        
+        /* RIGHT SIDEBAR - Actions */
+        #right-sidebar { 
+            width: 22%;
+            min-width: 280px;
+            padding: 15px;
+            background: white;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            color: var(--dark-bg);
+            margin: 15px 0 10px 0;
+            font-size: 1.1em;
+            border-bottom: 2px solid var(--info);
+            padding-bottom: 5px;
+        }
+        
+        select, button { 
+            margin: 5px 0; 
+            padding: 10px; 
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 0.95em;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background: #1a252f;
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .action-button {
+            background: var(--info);
+            margin: 8px 0;
+            text-align: left;
+            padding: 12px;
+            font-size: 0.9em;
+        }
+        
+        .action-button:hover:not(:disabled) {
+            background: #2980b9;
+        }
+        
+        .action-cost {
+            float: right;
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        
+        .reset-button {
+            background-color: var(--danger);
+        }
+        
+        .reset-button:hover {
+            background-color: #c0392b;
+        }
+        
+        /* METRICS STYLING */
+        #metrics {
+            background: linear-gradient(135deg, #ecf0f1 0%, #dfe6e9 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 2px solid var(--primary);
+        }
+        
+        #metrics p {
+            margin: 12px 0;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+            color: var(--dark-bg);
+        }
+        
+        .metric-value {
+            transition: all 0.3s ease;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.2em;
+            background: white;
+            border: 2px solid #ddd;
+        }
+        
+        .metric-increase {
+            animation: flashGreen 0.8s;
+        }
+        
+        .metric-decrease {
+            animation: flashRed 0.8s;
+        }
+        
+        @keyframes flashGreen {
+            0%, 100% { background-color: white; color: inherit; border-color: #ddd; }
+            50% { background-color: rgba(40, 167, 69, 0.5); color: #155724; border-color: var(--success); }
+        }
+        
+        @keyframes flashRed {
+            0%, 100% { background-color: white; color: inherit; border-color: #ddd; }
+            50% { background-color: rgba(220, 53, 69, 0.5); color: #721c24; border-color: var(--danger); }
+        }
+        
+        .change-indicator {
+            font-size: 1em;
+            margin-left: 8px;
+            font-weight: bold;
+            animation: fadeOut 3.5s forwards;
+            position: relative;
+            display: inline-block;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0) scale(1.2); }
+            20% { opacity: 1; transform: translateY(-5px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-15px) scale(1); }
+        }
+        
+        /* WIN PROGRESS */
+        #win-progress {
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 2px solid var(--success);
+        }
+        
+        #win-progress h4 {
+            margin: 0 0 8px 0;
+            color: var(--success);
+            font-size: 1em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 8px 0;
+            border: 2px solid var(--success);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success) 0%, #2ecc71 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        /* ACTION LOG - MOVED HIGHER */
+        #log { 
+            margin-top: 10px;
+            margin-bottom: 15px;
+            height: 180px;
+            overflow-y: auto; 
+            border: 2px solid var(--info); 
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+        
+        #log p {
+            border-left: 4px solid var(--info);
+            padding-left: 10px;
+            margin: 10px 0;
+            animation: slideIn 0.3s ease-out;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* PULSE EVENTS - LARGER */
+        #pulse-container {
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            z-index: 1000; 
+            display: flex; 
+            flex-direction: column-reverse; 
+            align-items: center;
+        }
+        
+        .pulse-bubble {
+            background-color: #FFFFFF; 
+            color: #333; 
+            border: 3px solid var(--success);
+            padding: 20px 30px; 
+            border-radius: 20px; 
+            margin-top: 15px;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            font-size: 1.1em;
+            font-weight: 500;
+            animation: floatUp 12s forwards ease-in-out;
+            text-align: center;
+        }
+        
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(0) scale(0.9); }
+            10% { opacity: 1; transform: translateY(0) scale(1); }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-100px) scale(0.95); }
+        }
+        
+        /* MODALS */
+        .modal-overlay {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0; 
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center; 
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: #fefefe; 
+            padding: 30px; 
+            border: 1px solid #888;
+            border-radius: 12px; 
+            width: 85%; 
+            max-width: 650px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h2 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+        
+        .modal-content h3 {
+            color: var(--dark-bg);
+            margin-top: 15px;
+        }
+        
+        .modal-content ul, .modal-content ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        
+        .modal-content li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        
+        #game-over-modal .modal-content { 
+            text-align: center; 
+        }
+        
+        #event-modal .modal-content { 
+            text-align: left; 
+        }
+        
+        #event-choices { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            margin-top: 20px; 
+        }
+        
+        .tutorial-page {
+            min-height: 300px;
+        }
+        
+        #tutorial-page-indicator {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+        
+        #top-crimes-list {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+        
+        #top-crimes-list li {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        .view-toggle-group {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="pulse-container"></div>
+    
+    <!-- LEFT SIDEBAR - Status -->
+    <div id="left-sidebar">
+        <h2>Status</h2>
+        
+        <div id="metrics">
+            <h3 style="margin-top: 0; border: none; font-size: 1em; text-align: center;">Current Metrics</h3>
+            <p>
+                <span class="metric-label">Budget:</span>
+                <span>$<span id="budget" class="metric-value">100.0</span>M</span>
+            </p>
+            <p>
+                <span class="metric-label">Reputation:</span>
+                <span id="reputation" class="metric-value">50.0</span>
+            </p>
+            <p>
+                <span class="metric-label">Backlash:</span>
+                <span id="backlash" class="metric-value">0.0</span>%
+            </p>
+            <p>
+                <span class="metric-label">Funeral Load:</span>
+                <span id="funeral-load">0</span>
+            </p>
+        </div>
+        
+        <div id="win-progress">
+            <h4>Golden Age Progress</h4>
+            <p style="margin: 5px 0;"><strong><span id="stability-turns">0</span>/12 turns</strong></p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="stability-progress"></div>
+            </div>
+            <small>Maintain: Rep >80, Backlash <10, Budget >0</small>
+        </div>
+        
+        <h3>Action Log</h3>
+        <div id="log"></div>
+        
+        <div id="top-crimes">
+            <h3>Top 5 Incidents</h3>
+            <ol id="top-crimes-list"></ol>
+        </div>
+        
+        <label for="locality" style="margin-top: 15px;"><strong>City:</strong></label>
+        <select id="locality">
+            {% for loc in localities %}
+                <option value="{{ loc }}">{{ loc }}</option>
+            {% endfor %}
+        </select>
+        
+        <label for="crime-type-filter"><strong>Crime Filter:</strong></label>
+        <select id="crime-type-filter">
+            <option value="all">All Types</option>
+            {% for crime_type in crime_types %}
+                <option value="{{ crime_type }}">{{ crime_type | title }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="view-toggle-group">
+            <label><strong>Map View:</strong></label><br>
+            <input type="radio" id="view-heatmap" name="view_type" value="heatmap" checked> 
+            <label for="view-heatmap">Heatmap</label><br>
+            <input type="radio" id="view-icon" name="view_type" value="icon"> 
+            <label for="view-icon">Icons</label>
+        </div>
+    </div>
+    
+    <!-- MAP -->
+    <div id="map-container">
+        <iframe id="map-frame" src="about:blank"></iframe>
+    </div>
+    
+    <!-- RIGHT SIDEBAR - Actions -->
+    <div id="right-sidebar">
+        <h2>Actions</h2>
+        {% for action in actions %}
+            <button class="action-button" onclick="takeAction('{{ action.id }}')" title="{{ action.description }}">
+                {{ action.name }}
+                <span class="action-cost">${{ action.cost }}M</span>
+            </button>
+        {% endfor %}
+        
+        <hr style="margin: 15px 0; border: 1px solid #ddd;">
+        <button onclick="resetGame()" class="reset-button">Reset Game</button>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div id="tutorial-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Welcome to Hampton Roads Heat</h2>
+            <div id="tutorial-content">
+                <div class="tutorial-page" data-page="1">
+                    <h3>Your Mission</h3>
+                    <p>You are the Regional Response Director for Norfolk, Virginia. Your job is to balance three competing priorities:</p>
+                    <ul>
+                        <li><strong>Budget:</strong> Financial resources. Don't go bankrupt.</li>
+                        <li><strong>Reputation:</strong> Public trust in your leadership.</li>
+                        <li><strong>Backlash:</strong> Social friction and unrest.</li>
+                    </ul>
+                    <p><strong>Win Condition:</strong> Maintain Reputation >80, Backlash <10, and positive Budget for 12 consecutive turns to achieve a "Golden Age."</p>
+                    <p><strong>Loss Conditions:</strong></p>
+                    <ul>
+                        <li>Budget reaches $0 (Bankruptcy)</li>
+                        <li>More than 10 homicides in 15 days (State of Emergency)</li>
+                    </ul>
+                </div>
+                
+                <div class="tutorial-page" data-page="2" style="display:none;">
+                    <h3>How the Game Works</h3>
+                    <p>Each turn follows this sequence:</p>
+                    <ol>
+                        <li><strong>Simulation runs FIRST</strong> - New crimes occur, events trigger, metrics change</li>
+                        <li><strong>You choose ONE action</strong> - Each has different costs and effects</li>
+                        <li><strong>Your action's effects apply</strong> - Crime weights reduced, metrics adjusted</li>
+                        <li><strong>Game state evaluated</strong> - Check for win/loss conditions</li>
+                    </ol>
+                    <p><strong>Important:</strong> The map shows crime "weight" - a measure of severity and likelihood. Your actions reduce weight, making areas safer.</p>
+                </div>
+                
+                <div class="tutorial-page" data-page="3" style="display:none;">
+                    <h3>Strategy & Balance</h3>
+                    <p>There is no single "correct" approach. You must balance different philosophies:</p>
+                    <ul>
+                        <li><strong>Enforcement actions</strong> (Sweeps, Task Forces) give immediate crime reduction but damage trust</li>
+                        <li><strong>Community programs</strong> (Policing, Training) build trust slowly with minimal crime impact</li>
+                        <li><strong>Prevention</strong> (Youth Programs, Social Services) are long-term investments</li>
+                        <li><strong>Economic development</strong> addresses root causes through jobs and infrastructure</li>
+                    </ul>
+                    <p><em>Tip: Watch your metrics. High backlash increases crime generation!</em></p>
+                </div>
+                
+                <div class="tutorial-page" data-page="4" style="display:none;">
+                    <h3>Events & Feedback</h3>
+                    <p><strong>Community Pulse Events:</strong> Frequent notifications (floating at bottom) that represent public sentiment. Minor effects but constant pressure.</p>
+                    <p><strong>Major Interactive Events:</strong> Rare crises that pause the game and demand a decision. These can make or break your administration.</p>
+                    <p><strong>Action Feedback:</strong> After each action, you'll see exactly what it accomplished - how many incidents were affected and what the outcome was.</p>
+                    <p style="margin-top: 20px; text-align: center;"><strong>Ready to begin? Good luck, Director!</strong></p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <button id="tutorial-prev" style="width: auto; padding: 10px 20px;">Previous</button>
+                <span id="tutorial-page-indicator">1 / 4</span>
+                <button id="tutorial-next" style="width: auto; padding: 10px 20px;">Next</button>
+                <button id="tutorial-skip" style="width: auto; padding: 10px 20px; background-color: #95a5a6;">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="game-over-title">Game Over</h2>
+            <p id="game-over-message" style="font-size: 1.1em; margin: 20px 0;"></p>
+            <button onclick="window.location.reload();">Play Again</button>
+        </div>
+    </div>
+    
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="event-title"></h2>
+            <p id="event-text" style="margin: 15px 0; line-height: 1.6;"></p>
+            <div id="event-choices"></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let prevMetrics = { budget: 100, reputation: 50, backlash: 0 };
+        let stabilityTurns = 0;
+        let currentTutorialPage = 1;
+        const totalTutorialPages = 4;
+
+        function changeTutorialPage(direction) {
+            currentTutorialPage += direction;
+            
+            if (currentTutorialPage < 1) currentTutorialPage = 1;
+            if (currentTutorialPage > totalTutorialPages) currentTutorialPage = totalTutorialPages;
+            
+            $('.tutorial-page').hide();
+            $(`.tutorial-page[data-page="${currentTutorialPage}"]`).show();
+            $('#tutorial-page-indicator').text(`${currentTutorialPage} / ${totalTutorialPages}`);
+            
+            $('#tutorial-prev').prop('disabled', currentTutorialPage === 1);
+            $('#tutorial-next').prop('disabled', currentTutorialPage === totalTutorialPages);
+            
+            if (currentTutorialPage === totalTutorialPages) {
+                $('#tutorial-next').text('Start Game');
+            } else {
+                $('#tutorial-next').text('Next');
+            }
+        }
+
+        function closeTutorial() {
+            $('#tutorial-modal').hide();
+            localStorage.setItem('tutorial_completed', 'true');
+            console.log('Tutorial closed, set tutorial_completed = true');
+        }
+
+        function showPulseEvent(text) {
+            const bubble = $('<div class="pulse-bubble"></div>').text(text);
+            $('#pulse-container').append(bubble);
+            setTimeout(() => bubble.remove(), 12000);
+        }
+
+        function loadMap(locality, crime_type, view_type) {
+            $.getJSON(`/${locality}/map?crime_type=${crime_type}&view_type=${view_type}`, function(data) {
+                $('#map-frame').attr('src', `${data.map_url}?v=${new Date().getTime()}`);
+                
+                if (data.funeral_load) {
+                    let loadText = Object.entries(data.funeral_load)
+                        .map(([name, count]) => `${name}: ${count}`)
+                        .join(', ');
+                    $('#funeral-load').text(loadText || '0');
+                }
+                
+                if (data.top_crimes) {
+                    const list = $('#top-crimes-list').empty();
+                    if (data.top_crimes.length > 0) {
+                        data.top_crimes.forEach(crime => {
+                            list.append(`<li>${crime.type.replace(/_/g, ' ').toUpperCase()}: ${crime.count}</li>`);
+                        });
+                    } else {
+                        list.append(`<li>No incidents recorded.</li>`);
+                    }
+                }
+            });
+        }
+
+        function updateMetricWithAnimation(metricId, newValue, oldValue) {
+            const element = $(`#${metricId}`);
+            const change = newValue - oldValue;
+            
+            element.text(newValue.toFixed(1));
+            
+            if (Math.abs(change) > 0.1) {
+                const changeClass = change > 0 ? 'metric-increase' : 'metric-decrease';
+                const arrow = change > 0 ? '▲' : '▼';
+                const color = change > 0 ? '#27ae60' : '#e74c3c';
+                
+                element.addClass(changeClass);
+                element.parent().find('.change-indicator').remove();
+                
+                const indicator = $('<span class="change-indicator"></span>')
+                    .text(`${arrow} ${Math.abs(change).toFixed(1)}`)
+                    .css('color', color);
+                element.after(indicator);
+                
+                setTimeout(() => element.removeClass(changeClass), 800);
+            }
+        }
+
+        function updateStabilityProgress(reputation, backlash, budget) {
+            if (reputation > 80 && backlash < 10 && budget > 0) {
+                stabilityTurns++;
+            } else {
+                stabilityTurns = 0;
+            }
+            
+            $('#stability-turns').text(stabilityTurns);
+            const percentage = (stabilityTurns / 12) * 100;
+            $('#stability-progress')
+                .css('width', `${percentage}%`)
+                .text(stabilityTurns > 0 ? `${stabilityTurns}/12` : '');
+            
+            if (stabilityTurns >= 8) {
+                $('#win-progress').css('background', '#fff9c4');
+                $('#win-progress h4').css('color', '#f39c12');
+            } else {
+                $('#win-progress').css('background', '#e8f5e9');
+                $('#win-progress h4').css('color', '#27ae60');
+            }
+        }
+        
+        function handleGameOver(state, message) {
+            $('#game-over-title').text((state === 'win_golden_age') ? 'Victory!' : 'Game Over');
+            $('#game-over-message').text(message);
+            $('#game-over-modal').css('display', 'flex');
+            $('#right-sidebar button').prop('disabled', true);
+        }
+
+        function handleMajorEvent(event) {
+            const modal = $('#event-modal');
+            modal.find('#event-title').text(event.name);
+            modal.find('#event-text').text(event.text);
+            
+            const choicesContainer = modal.find('#event-choices').empty();
+            event.choices.forEach(choice => {
+                const button = $('<button></button>')
+                    .text(choice.text)
+                    .on('click', function() {
+                        respondToEvent(event.name, choice.id);
+                        modal.hide();
+                        $('#right-sidebar button').prop('disabled', false);
+                    });
+                choicesContainer.append(button);
+            });
+            
+            modal.css('display', 'flex');
+            $('#right-sidebar button').prop('disabled', true);
+        }
+
+        function respondToEvent(eventName, choiceId) {
+            const payload = { event_response: { name: eventName, choice_id: choiceId } };
+            $.ajax({
+                url: `/${$('#locality').val()}/action`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: handleSuccess,
+                error: handleError
+            });
+        }
+        
+        const handleSuccess = function(data) {
+            if (data.pulse_events) {
+                data.pulse_events.forEach(text => showPulseEvent(text));
+            }
+            
+            if (data.action_outcomes && data.action_outcomes.length > 0) {
+                const actionText = this.data ? 
+                    (JSON.parse(this.data).action || 'Event Response') : 
+                    'Action';
+                $('#log').prepend(
+                    `<p><strong>${actionText}:</strong><br>${data.action_outcomes.join('<br>')}</p>`
+                );
+            }
+            
+            updateMetricWithAnimation('budget', data.budget, prevMetrics.budget);
+            updateMetricWithAnimation('reputation', data.reputation, prevMetrics.reputation);
+            updateMetricWithAnimation('backlash', data.backlash, prevMetrics.backlash);
+            
+            prevMetrics = {
+                budget: data.budget,
+                reputation: data.reputation,
+                backlash: data.backlash
+            };
+            
+            updateStabilityProgress(data.reputation, data.backlash, data.budget);
+            updateMap();
+            
+            if (data.game_over_state && data.game_over_state !== 'active') {
+                handleGameOver(data.game_over_state, data.game_over_message);
+            } else if (data.triggered_major_event) {
+                handleMajorEvent(data.triggered_major_event);
+            }
+        };
+        
+        const handleError = function(err) {
+            $('#log').prepend(`<p style="color:red;"><strong>Error:</strong> Could not perform action.</p>`);
+            console.error(err);
+        };
+
+        function takeAction(action) {
+            $.ajax({
+                url: `/${$('#locality').val()}/action`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ action: action }),
+                success: handleSuccess,
+                error: handleError
+            });
+        }
+
+        function resetGame() {
+            const confirmReset = $('#game-over-modal').css('display') === 'flex' ? 
+                true : 
+                confirm("Are you sure you want to reset? All progress will be lost.");
+            
+            if (confirmReset) {
+                $.ajax({
+                    url: '/reset',
+                    type: 'POST',
+                    success: function(response) { 
+                        console.log('Reset successful:', response);
+                        stabilityTurns = 0;
+                        localStorage.removeItem('tutorial_completed');
+                        window.location.reload(); 
+                    },
+                    error: function(xhr, status, error) { 
+                        console.error('Reset failed:', error);
+                        alert('Failed to reset the game: ' + error); 
+                    }
+                });
+            }
+        }
+        
+        function updateMap() {
+            const locality = $('#locality').val();
+            const crimeType = $('#crime-type-filter').val();
+            const viewType = $('input[name="view_type"]:checked').val();
+            loadMap(locality, crimeType, viewType);
+        }
+
+        $(document).ready(function() {
+            const tutorialCompleted = localStorage.getItem('tutorial_completed');
+            console.log('Tutorial completed status:', tutorialCompleted);
+            
+            if (!tutorialCompleted || tutorialCompleted === 'false' || tutorialCompleted === 'null') {
+                console.log('Showing tutorial...');
+                $('#tutorial-modal').css('display', 'flex');
+            } else {
+                console.log('Tutorial already completed, skipping');
+            }
+            
+            updateMap();
+            $('#locality, #crime-type-filter, input[name="view_type"]').on('change', updateMap);
+            
+            $('#tutorial-next').on('click', function() {
+                if (currentTutorialPage === totalTutorialPages) {
+                    closeTutorial();
+                } else {
+                    changeTutorialPage(1);
+                }
+            });
+            
+            $('#tutorial-prev').on('click', function() {
+                changeTutorialPage(-1);
+            });
+            
+            $('#tutorial-skip').on('click', function() {
+                closeTutorial();
+            });
+        });
+    </script>
+</body>
+</html>
