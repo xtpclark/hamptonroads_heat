@@ -337,10 +337,17 @@ def get_map(locality):
 def take_action(locality):
     with engine.connect() as conn:
         result = conn.execute(text(
-            "SELECT budget, backlash, reputation FROM sim_states ORDER BY id DESC LIMIT 1"
+            "SELECT budget, backlash, reputation, police_force FROM sim_states ORDER BY id DESC LIMIT 1"
         )).fetchone()
     
-    budget, backlash, reputation = result or (100.0, 0.0, 50.0)
+    budget, backlash, reputation, police_force = result or (100.0, 0.0, 50.0, 100.0)
+    
+    # Convert Decimal types to float for calculations
+    budget = float(budget)
+    backlash = float(backlash)
+    reputation = float(reputation)
+    police_force = float(police_force) if police_force is not None else 100.0
+    
     payload = request.json
     action_id = payload.get('action')
     event_response = payload.get('event_response')
@@ -353,12 +360,17 @@ def take_action(locality):
     reputation += metric_deltas['reputation']
     backlash += metric_deltas['backlash']
     
+    # Natural police force regeneration: 3 points per turn, capped at 100
+    police_force = min(100.0, police_force + 3.0)
+    
     action_outcomes = []
+    action_name = None
     
     if event_response:
         event_name = event_response.get('name')
         choice_id = event_response.get('choice_id')
         event_definition = next((e for e in MAJOR_EVENTS if e['name'] == event_name), None)
+        action_name = f"Event: {event_name}"
         
         if event_definition:
             handler_name = event_definition.get('handler', 'handle_generic_event')
@@ -373,6 +385,7 @@ def take_action(locality):
     elif action_id:
         action_def = PLAYER_ACTIONS.get(action_id)
         if action_def:
+            action_name = action_def.get('name', action_id)
             budget -= action_def.get('cost', 0.0)
             
             handler_name = action_def.get('handler')
@@ -384,6 +397,11 @@ def take_action(locality):
                 if isinstance(result, dict):
                     if 'message' in result:
                         action_outcomes.append(result['message'])
+                    
+                    # Apply police force cost
+                    if 'police_force_cost' in result:
+                        police_force -= result['police_force_cost']
+                        police_force = max(0.0, min(100.0, police_force))
                     
                     # Apply effects from TOML
                     for key, value in action_def.get('effects', {}).items():
@@ -421,7 +439,8 @@ def take_action(locality):
             'outcome': '; '.join(all_outcomes_for_db), 
             'budget': budget, 
             'backlash': backlash, 
-            'reputation': reputation
+            'reputation': reputation,
+            'police_force': police_force
         }]).to_sql('sim_states', engine, if_exists='append', index=False)
         conn.commit()
     
@@ -436,9 +455,11 @@ def take_action(locality):
     return jsonify({
         'pulse_events': pulse_outcomes,
         'action_outcomes': action_outcomes,
+        'action_name': action_name,
         'budget': budget,
         'backlash': backlash,
         'reputation': reputation,
+        'police_force': police_force,
         'game_over_state': game_over_state,
         'game_over_message': game_over_message,
         'triggered_major_event': event_to_send
@@ -487,7 +508,7 @@ def reset_game():
             # Initialize game state
             pd.DataFrame([{
                 'turn': 0, 'action': 'reset', 'outcome': 'Game reset',
-                'budget': 100.0, 'backlash': 0.0, 'reputation': 50.0
+                'budget': 100.0, 'backlash': 0.0, 'reputation': 50.0, 'police_force': 100.0
             }]).to_sql('sim_states', engine, if_exists='append', index=False)
             
             conn.commit()

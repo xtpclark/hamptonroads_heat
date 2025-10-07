@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS entities (
 );
 CREATE TABLE IF NOT EXISTS sim_states (
     id SERIAL PRIMARY KEY, turn INTEGER NOT NULL, action VARCHAR(50) NOT NULL, outcome TEXT,
-    budget FLOAT NOT NULL, backlash FLOAT NOT NULL, reputation FLOAT DEFAULT 50
+    budget FLOAT NOT NULL, backlash FLOAT NOT NULL, reputation FLOAT DEFAULT 50, police_force NUMERIC(5,1) DEFAULT 100.0
 );
 
 INSERT INTO localities (name, lat, lon) VALUES ('Norfolk', 36.85, -76.28) ON CONFLICT (name) DO NOTHING;

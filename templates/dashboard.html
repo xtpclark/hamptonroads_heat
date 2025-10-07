@@ -42,12 +42,96 @@
             flex: 1;
             border-left: 3px solid var(--primary);
             border-right: 3px solid var(--primary);
+            position: relative;
         }
         
         #map-frame { 
             width: 100%; 
             height: 100%; 
             border: none; 
+        }
+        
+        /* ACTION LOG SLIDEOUT */
+        #log-slideout {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 100;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        #log-slideout.open {
+            max-height: 400px;
+        }
+        
+        #log-toggle {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 101;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        
+        #log-toggle:hover {
+            background: #1a252f;
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        
+        #log-slideout-content {
+            padding: 60px 20px 20px;
+        }
+        
+        #log-slideout h3 {
+            color: var(--primary);
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+        }
+        
+        #log { 
+            height: 280px;
+            overflow-y: auto; 
+            border: 2px solid var(--info); 
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+        
+        #log p {
+            border-left: 4px solid var(--info);
+            padding-left: 10px;
+            margin: 10px 0;
+            animation: slideIn 0.3s ease-out;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
         
         /* RIGHT SIDEBAR - Actions */
@@ -148,11 +232,12 @@
         }
         
         #metrics p {
-            margin: 12px 0;
-            font-size: 1.1em;
+            margin: 8px 0;
+            font-size: 1em;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 2px 0;
         }
         
         .metric-label {
@@ -163,12 +248,14 @@
         .metric-value {
             transition: all 0.3s ease;
             display: inline-block;
-            padding: 4px 10px;
+            padding: 3px 12px;
             border-radius: 5px;
             font-weight: bold;
-            font-size: 1.2em;
+            font-size: 1.1em;
             background: white;
             border: 2px solid #ddd;
+            min-width: 60px;
+            text-align: right;
         }
         
         .metric-increase {
@@ -242,39 +329,7 @@
             font-size: 0.85em;
         }
         
-        /* ACTION LOG - MOVED HIGHER */
-        #log { 
-            margin-top: 10px;
-            margin-bottom: 15px;
-            height: 180px;
-            overflow-y: auto; 
-            border: 2px solid var(--info); 
-            padding: 10px;
-            background: #fafafa;
-            border-radius: 5px;
-        }
-        
-        #log p {
-            border-left: 4px solid var(--info);
-            padding-left: 10px;
-            margin: 10px 0;
-            animation: slideIn 0.3s ease-out;
-            font-size: 0.85em;
-            line-height: 1.4;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        /* PULSE EVENTS - LARGER */
+        /* PULSE EVENTS */
         #pulse-container {
             position: fixed; 
             bottom: 30px; 
@@ -420,8 +475,12 @@
                 <span id="backlash" class="metric-value">0.0</span>%
             </p>
             <p>
+                <span class="metric-label">Police Force:</span>
+                <span id="police-force" class="metric-value">100.0</span>
+            </p>
+            <p>
                 <span class="metric-label">Funeral Load:</span>
-                <span id="funeral-load">0</span>
+                <span class="metric-value" id="funeral-load" style="min-width: 80px; font-size: 0.9em;">0</span>
             </p>
         </div>
         
@@ -433,9 +492,6 @@
             </div>
             <small>Maintain: Rep >80, Backlash <10, Budget >0</small>
         </div>
-        
-        <h3>Action Log</h3>
-        <div id="log"></div>
         
         <div id="top-crimes">
             <h3>Top 5 Incidents</h3>
@@ -468,6 +524,13 @@
     
     <!-- MAP -->
     <div id="map-container">
+        <button id="log-toggle">📋 Action Log</button>
+        <div id="log-slideout">
+            <div id="log-slideout-content">
+                <h3>Action Log</h3>
+                <div id="log"></div>
+            </div>
+        </div>
         <iframe id="map-frame" src="about:blank"></iframe>
     </div>
     
@@ -492,49 +555,46 @@
             <div id="tutorial-content">
                 <div class="tutorial-page" data-page="1">
                     <h3>Your Mission</h3>
-                    <p>You are the Regional Response Director for Norfolk, Virginia. Your job is to balance three competing priorities:</p>
+                    <p>You are the Regional Response Director for Norfolk, Virginia. Your job is to balance four competing priorities:</p>
                     <ul>
                         <li><strong>Budget:</strong> Financial resources. Don't go bankrupt.</li>
                         <li><strong>Reputation:</strong> Public trust in your leadership.</li>
                         <li><strong>Backlash:</strong> Social friction and unrest.</li>
+                        <li><strong>Police Force:</strong> Officer capacity. Enforcement actions deplete this.</li>
                     </ul>
-                    <p><strong>Win Condition:</strong> Maintain Reputation >80, Backlash <10, and positive Budget for 12 consecutive turns to achieve a "Golden Age."</p>
-                    <p><strong>Loss Conditions:</strong></p>
-                    <ul>
-                        <li>Budget reaches $0 (Bankruptcy)</li>
-                        <li>More than 10 homicides in 15 days (State of Emergency)</li>
-                    </ul>
+                    <p><strong>Win Condition:</strong> Maintain Reputation >80, Backlash <10, and positive Budget for 12 consecutive turns.</p>
+                    <p><strong>Loss Conditions:</strong> Budget reaches $0 or 10+ homicides in 15 days.</p>
                 </div>
                 
                 <div class="tutorial-page" data-page="2" style="display:none;">
                     <h3>How the Game Works</h3>
-                    <p>Each turn follows this sequence:</p>
+                    <p>Each turn:</p>
                     <ol>
-                        <li><strong>Simulation runs FIRST</strong> - New crimes occur, events trigger, metrics change</li>
-                        <li><strong>You choose ONE action</strong> - Each has different costs and effects</li>
-                        <li><strong>Your action's effects apply</strong> - Crime weights reduced, metrics adjusted</li>
-                        <li><strong>Game state evaluated</strong> - Check for win/loss conditions</li>
+                        <li><strong>Simulation runs FIRST</strong> - New crimes occur, events trigger</li>
+                        <li><strong>You choose ONE action</strong> - Each has different costs</li>
+                        <li><strong>Effects apply</strong> - Crime weights reduced, metrics adjusted</li>
+                        <li><strong>Police force regenerates</strong> - +3 per turn automatically</li>
                     </ol>
-                    <p><strong>Important:</strong> The map shows crime "weight" - a measure of severity and likelihood. Your actions reduce weight, making areas safer.</p>
+                    <p><strong>Police Force:</strong> Enforcement actions consume force. If it's too low, aggressive tactics fail.</p>
                 </div>
                 
                 <div class="tutorial-page" data-page="3" style="display:none;">
                     <h3>Strategy & Balance</h3>
-                    <p>There is no single "correct" approach. You must balance different philosophies:</p>
+                    <p>Balance different approaches:</p>
                     <ul>
-                        <li><strong>Enforcement actions</strong> (Sweeps, Task Forces) give immediate crime reduction but damage trust</li>
-                        <li><strong>Community programs</strong> (Policing, Training) build trust slowly with minimal crime impact</li>
-                        <li><strong>Prevention</strong> (Youth Programs, Social Services) are long-term investments</li>
-                        <li><strong>Economic development</strong> addresses root causes through jobs and infrastructure</li>
+                        <li><strong>Enforcement</strong> (Sweeps, Task Forces) - High police force cost, immediate results, damages trust</li>
+                        <li><strong>Community</strong> (Policing, Training) - Restores police force, builds trust slowly</li>
+                        <li><strong>Prevention</strong> (Youth, Social Services) - Long-term investments</li>
+                        <li><strong>Economic</strong> (Business, Infrastructure) - Addresses root causes</li>
                     </ul>
-                    <p><em>Tip: Watch your metrics. High backlash increases crime generation!</em></p>
+                    <p><em>High backlash increases crime generation!</em></p>
                 </div>
                 
                 <div class="tutorial-page" data-page="4" style="display:none;">
                     <h3>Events & Feedback</h3>
-                    <p><strong>Community Pulse Events:</strong> Frequent notifications (floating at bottom) that represent public sentiment. Minor effects but constant pressure.</p>
-                    <p><strong>Major Interactive Events:</strong> Rare crises that pause the game and demand a decision. These can make or break your administration.</p>
-                    <p><strong>Action Feedback:</strong> After each action, you'll see exactly what it accomplished - how many incidents were affected and what the outcome was.</p>
+                    <p><strong>Community Pulse:</strong> Frequent notifications (bottom of screen) with minor effects.</p>
+                    <p><strong>Major Events:</strong> Rare crises requiring immediate decisions.</p>
+                    <p><strong>Action Feedback:</strong> See exactly what each action accomplished in the Action Log (click button above the map).</p>
                     <p style="margin-top: 20px; text-align: center;"><strong>Ready to begin? Good luck, Director!</strong></p>
                 </div>
             </div>
@@ -568,14 +628,13 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        let prevMetrics = { budget: 100, reputation: 50, backlash: 0 };
+        let prevMetrics = { budget: 100, reputation: 50, backlash: 0, police_force: 100 };
         let stabilityTurns = 0;
         let currentTutorialPage = 1;
         const totalTutorialPages = 4;
 
         function changeTutorialPage(direction) {
             currentTutorialPage += direction;
-            
             if (currentTutorialPage < 1) currentTutorialPage = 1;
             if (currentTutorialPage > totalTutorialPages) currentTutorialPage = totalTutorialPages;
             
@@ -596,7 +655,6 @@
         function closeTutorial() {
             $('#tutorial-modal').hide();
             localStorage.setItem('tutorial_completed', 'true');
-            console.log('Tutorial closed, set tutorial_completed = true');
         }
 
         function showPulseEvent(text) {
@@ -613,7 +671,9 @@
                     let loadText = Object.entries(data.funeral_load)
                         .map(([name, count]) => `${name}: ${count}`)
                         .join(', ');
-                    $('#funeral-load').text(loadText || '0');
+                    $('#funeral-load').text(loadText || 'None');
+                } else {
+                    $('#funeral-load').text('None');
                 }
                 
                 if (data.top_crimes) {
@@ -720,11 +780,9 @@
             }
             
             if (data.action_outcomes && data.action_outcomes.length > 0) {
-                const actionText = this.data ? 
-                    (JSON.parse(this.data).action || 'Event Response') : 
-                    'Action';
+                const actionName = data.action_name || 'Action Taken';
                 $('#log').prepend(
-                    `<p><strong>${actionText}:</strong><br>${data.action_outcomes.join('<br>')}</p>`
+                    `<p><strong>${actionName}:</strong><br>${data.action_outcomes.join('<br>')}</p>`
                 );
             }
             
@@ -732,10 +790,15 @@
             updateMetricWithAnimation('reputation', data.reputation, prevMetrics.reputation);
             updateMetricWithAnimation('backlash', data.backlash, prevMetrics.backlash);
             
+            if (data.police_force !== undefined) {
+                updateMetricWithAnimation('police-force', data.police_force, prevMetrics.police_force);
+            }
+            
             prevMetrics = {
                 budget: data.budget,
                 reputation: data.reputation,
-                backlash: data.backlash
+                backlash: data.backlash,
+                police_force: data.police_force !== undefined ? data.police_force : prevMetrics.police_force
             };
             
             updateStabilityProgress(data.reputation, data.backlash, data.budget);
@@ -774,13 +837,11 @@
                     url: '/reset',
                     type: 'POST',
                     success: function(response) { 
-                        console.log('Reset successful:', response);
                         stabilityTurns = 0;
                         localStorage.removeItem('tutorial_completed');
                         window.location.reload(); 
                     },
                     error: function(xhr, status, error) { 
-                        console.error('Reset failed:', error);
                         alert('Failed to reset the game: ' + error); 
                     }
                 });
@@ -796,17 +857,20 @@
 
         $(document).ready(function() {
             const tutorialCompleted = localStorage.getItem('tutorial_completed');
-            console.log('Tutorial completed status:', tutorialCompleted);
             
             if (!tutorialCompleted || tutorialCompleted === 'false' || tutorialCompleted === 'null') {
-                console.log('Showing tutorial...');
                 $('#tutorial-modal').css('display', 'flex');
-            } else {
-                console.log('Tutorial already completed, skipping');
             }
             
             updateMap();
             $('#locality, #crime-type-filter, input[name="view_type"]').on('change', updateMap);
+            
+            // Action Log Toggle
+            $('#log-toggle').on('click', function() {
+                $('#log-slideout').toggleClass('open');
+                const isOpen = $('#log-slideout').hasClass('open');
+                $(this).text(isOpen ? '✕ Close Log' : '📋 Action Log');
+            });
             
             $('#tutorial-next').on('click', function() {
                 if (currentTutorialPage === totalTutorialPages) {

@@ -3,8 +3,21 @@ from db import engine
 import random
 
 def handle_sweep_action(locality):
-    """Aggressive enforcement targeting shootings."""
+    """Aggressive enforcement targeting shootings. CONSUMES 15 police force."""
     with engine.connect() as conn:
+        # Check current police force
+        police_force = conn.execute(text(
+            "SELECT police_force FROM sim_states ORDER BY id DESC LIMIT 1"
+        )).scalar() or 100
+        
+        if police_force < 15:
+            return {
+                'success': False,
+                'message': f"Insufficient police force ({police_force:.1f}/100). Officers exhausted from recent operations. Cannot execute sweep.",
+                'incidents_affected': 0,
+                'police_force_cost': 0
+            }
+        
         count_query = text("""
             SELECT COUNT(*) FROM incidents 
             WHERE type = 'shooting' AND locality = :loc AND weight > 1
@@ -14,8 +27,9 @@ def handle_sweep_action(locality):
         if total_shootings == 0:
             return {
                 'success': False,
-                'message': f"No active shooting incidents found in {locality}. Resources wasted.",
-                'incidents_affected': 0
+                'message': f"No active shooting incidents found in {locality}. Resources wasted. (-5 police force)",
+                'incidents_affected': 0,
+                'police_force_cost': 5
             }
         
         update_query = text("""
@@ -32,14 +46,27 @@ def handle_sweep_action(locality):
         
         return {
             'success': True,
-            'message': f"Enforcement sweep: {result.rowcount} of {total_shootings} shooting hotspots suppressed. Heavy-handed tactics drew criticism.",
+            'message': f"Enforcement sweep: {result.rowcount} of {total_shootings} shooting hotspots suppressed. Heavy-handed tactics drew criticism. (-15 police force)",
             'incidents_affected': result.rowcount,
-            'total_count': total_shootings
+            'total_count': total_shootings,
+            'police_force_cost': 15
         }
 
 def handle_increase_patrols_action(locality):
-    """Visible police presence reducing opportunistic crime."""
+    """Visible police presence reducing opportunistic crime. CONSUMES 8 police force."""
     with engine.connect() as conn:
+        police_force = conn.execute(text(
+            "SELECT police_force FROM sim_states ORDER BY id DESC LIMIT 1"
+        )).scalar() or 100
+        
+        if police_force < 8:
+            return {
+                'success': False,
+                'message': f"Insufficient police force ({police_force:.1f}/100). Cannot increase patrols.",
+                'incidents_affected': 0,
+                'police_force_cost': 0
+            }
+        
         count_query = text("""
             SELECT COUNT(*) FROM incidents 
             WHERE type IN ('petty_theft', 'vandalism', 'larceny_auto') AND locality = :loc
@@ -56,13 +83,26 @@ def handle_increase_patrols_action(locality):
         
         return {
             'success': True,
-            'message': f"Increased patrols reduced {result.rowcount} opportunistic crimes out of {total_crimes} total. Visible deterrent working.",
-            'incidents_affected': result.rowcount
+            'message': f"Increased patrols reduced {result.rowcount} opportunistic crimes out of {total_crimes} total. (-8 police force)",
+            'incidents_affected': result.rowcount,
+            'police_force_cost': 8
         }
 
 def handle_task_force_action(locality):
-    """Specialized unit targeting the most prevalent crime."""
+    """Specialized unit targeting the most prevalent crime. CONSUMES 20 police force."""
     with engine.connect() as conn:
+        police_force = conn.execute(text(
+            "SELECT police_force FROM sim_states ORDER BY id DESC LIMIT 1"
+        )).scalar() or 100
+        
+        if police_force < 20:
+            return {
+                'success': False,
+                'message': f"Insufficient police force ({police_force:.1f}/100). Cannot form specialized task force.",
+                'incidents_affected': 0,
+                'police_force_cost': 0
+            }
+        
         crime_query = text("""
             SELECT type, COUNT(*) as cnt, SUM(weight) as total_weight
             FROM incidents 
@@ -76,8 +116,9 @@ def handle_task_force_action(locality):
         if not top_crime or top_crime[1] == 0:
             return {
                 'success': False,
-                'message': f"No significant crime patterns found to justify a task force. Budget wasted.",
-                'incidents_affected': 0
+                'message': f"No significant crime patterns found to justify a task force. Budget wasted. (-5 police force)",
+                'incidents_affected': 0,
+                'police_force_cost': 5
             }
         
         crime_type, count, weight = top_crime
@@ -94,9 +135,10 @@ def handle_task_force_action(locality):
         
         return {
             'success': True,
-            'message': f"Task force crackdown on {crime_display}: {result.rowcount} incidents heavily suppressed. Civil liberties groups alarmed.",
+            'message': f"Task force crackdown on {crime_display}: {result.rowcount} incidents heavily suppressed. Civil liberties groups alarmed. (-20 police force)",
             'incidents_affected': result.rowcount,
-            'crime_type': crime_display
+            'crime_type': crime_display,
+            'police_force_cost': 20
         }
 
 def handle_technology_action(locality):
@@ -118,7 +160,7 @@ def handle_technology_action(locality):
         }
 
 def handle_community_policing_action(locality):
-    """Officers build relationships, slow crime reduction across all types."""
+    """Officers build relationships, slow crime reduction across all types. RESTORES 5 police force."""
     with engine.connect() as conn:
         query = text("""
             UPDATE incidents 
@@ -130,8 +172,9 @@ def handle_community_policing_action(locality):
         
         return {
             'success': True,
-            'message': f"Community policing program launched. Officers walking beats and engaging residents. {result.rowcount} incidents showing marginal improvement.",
-            'incidents_affected': result.rowcount
+            'message': f"Community policing program launched. Officers walking beats and engaging residents. {result.rowcount} incidents showing marginal improvement. (+5 police force - officers less stressed)",
+            'incidents_affected': result.rowcount,
+            'police_force_cost': -5  # Negative cost = restoration
         }
 
 def handle_crisis_training_action(locality):
