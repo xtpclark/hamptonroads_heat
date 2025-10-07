@@ -3,7 +3,11 @@
 <head>
     <title>Hampton Roads Heat</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -36,7 +40,7 @@
             flex-direction: column;
         }
         
-        /* MAP CONTAINER */
+        /* MAP CONTAINER - Now with direct Leaflet instead of iframe */
         #map-container { 
             height: 100vh; 
             flex: 1;
@@ -45,10 +49,9 @@
             position: relative;
         }
         
-        #map-frame { 
+        #map { 
             width: 100%; 
             height: 100%; 
-            border: none; 
         }
         
         /* ACTION LOG SLIDEOUT */
@@ -59,7 +62,7 @@
             right: 0;
             background: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 100;
+            z-index: 1000;
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
@@ -74,7 +77,7 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 101;
+            z-index: 1001;
             background: var(--primary);
             color: white;
             border: none;
@@ -340,6 +343,7 @@
             display: flex; 
             flex-direction: column-reverse; 
             align-items: center;
+            pointer-events: none;
         }
         
         .pulse-bubble {
@@ -355,6 +359,7 @@
             font-weight: 500;
             animation: floatUp 12s forwards ease-in-out;
             text-align: center;
+            pointer-events: auto;
         }
         
         @keyframes floatUp {
@@ -451,6 +456,52 @@
             background: #f8f9fa;
             border-radius: 5px;
         }
+        
+        /* HOTSPOT STYLES */
+        .hotspot-popup {
+            min-width: 250px;
+        }
+        
+        .hotspot-header {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .hotspot-severity {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .severity-critical { background: #e74c3c; color: white; }
+        .severity-high { background: #f39c12; color: white; }
+        .severity-moderate { background: #f1c40f; color: #333; }
+        
+        .hotspot-stats {
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        
+        .hotspot-action-btn {
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            background: var(--info);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        
+        .hotspot-action-btn:hover {
+            background: #2980b9;
+        }
     </style>
 </head>
 <body>
@@ -531,7 +582,7 @@
                 <div id="log"></div>
             </div>
         </div>
-        <iframe id="map-frame" src="about:blank"></iframe>
+        <div id="map"></div>
     </div>
     
     <!-- RIGHT SIDEBAR - Actions -->
@@ -544,6 +595,10 @@
             </button>
         {% endfor %}
         
+        <hr style="margin: 15px 0; border: 1px solid #ddd;">
+        <p style="font-size: 0.9em; color: var(--info); font-weight: bold; text-align: center;">
+            💡 TIP: Click hotspot circles on map for targeted actions (50% cost!)
+        </p>
         <hr style="margin: 15px 0; border: 1px solid #ddd;">
         <button onclick="resetGame()" class="reset-button">Reset Game</button>
     </div>
@@ -591,10 +646,16 @@
                 </div>
                 
                 <div class="tutorial-page" data-page="4" style="display:none;">
-                    <h3>Events & Feedback</h3>
-                    <p><strong>Community Pulse:</strong> Frequent notifications (bottom of screen) with minor effects.</p>
-                    <p><strong>Major Events:</strong> Rare crises requiring immediate decisions.</p>
-                    <p><strong>Action Feedback:</strong> See exactly what each action accomplished in the Action Log (click button above the map).</p>
+                    <h3>NEW: Interactive Hotspot System</h3>
+                    <p><strong>Hotspot Circles:</strong> Colored circles show active crime zones. Click them for targeted actions!</p>
+                    <p><strong>Colors:</strong></p>
+                    <ul>
+                        <li><strong style="color: #e74c3c;">Red</strong> = Critical (needs immediate attention)</li>
+                        <li><strong style="color: #f39c12;">Orange</strong> = High priority</li>
+                        <li><strong style="color: #f1c40f;">Yellow</strong> = Moderate</li>
+                    </ul>
+                    <p><strong>Benefits of targeted actions:</strong> Half cost, less political damage, more effective!</p>
+                    <p><strong>City-wide vs Targeted:</strong> Use sidebar for city-wide actions, click map for precision strikes.</p>
                     <p style="margin-top: 20px; text-align: center;"><strong>Ready to begin? Good luck, Director!</strong></p>
                 </div>
             </div>
@@ -628,11 +689,14 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        let map, heatLayer, markerCluster, hotspotLayer;
+        let currentMapData = null;
         let prevMetrics = { budget: 100, reputation: 50, backlash: 0, police_force: 100 };
         let stabilityTurns = 0;
         let currentTutorialPage = 1;
         const totalTutorialPages = 4;
 
+        // Tutorial functions
         function changeTutorialPage(direction) {
             currentTutorialPage += direction;
             if (currentTutorialPage < 1) currentTutorialPage = 1;
@@ -663,19 +727,30 @@
             setTimeout(() => bubble.remove(), 12000);
         }
 
-        function loadMap(locality, crime_type, view_type) {
-            $.getJSON(`/${locality}/map?crime_type=${crime_type}&view_type=${view_type}`, function(data) {
-                $('#map-frame').attr('src', `${data.map_url}?v=${new Date().getTime()}`);
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([36.85, -76.28], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            markerCluster = L.markerClusterGroup();
+            hotspotLayer = L.layerGroup().addTo(map);
+            
+            updateMap();
+        }
+
+        function updateMap() {
+            const locality = $('#locality').val();
+            const crimeType = $('#crime-type-filter').val();
+            const viewType = $('input[name="view_type"]:checked').val();
+            
+            $.getJSON(`/${locality}/map_data?crime_type=${crimeType}`, function(data) {
+                currentMapData = data;
+                renderMap(data, viewType);
                 
-                if (data.funeral_load) {
-                    let loadText = Object.entries(data.funeral_load)
-                        .map(([name, count]) => `${name}: ${count}`)
-                        .join(', ');
-                    $('#funeral-load').text(loadText || 'None');
-                } else {
-                    $('#funeral-load').text('None');
-                }
-                
+                // Update top crimes and funeral load
                 if (data.top_crimes) {
                     const list = $('#top-crimes-list').empty();
                     if (data.top_crimes.length > 0) {
@@ -685,6 +760,167 @@
                     } else {
                         list.append(`<li>No incidents recorded.</li>`);
                     }
+                }
+                
+                if (data.funeral_load) {
+                    let loadText = Object.entries(data.funeral_load)
+                        .map(([name, count]) => `${name}: ${count}`)
+                        .join(', ');
+                    $('#funeral-load').text(loadText || 'None');
+                } else {
+                    $('#funeral-load').text('None');
+                }
+            });
+        }
+
+        function renderMap(data, viewType) {
+            // Clear existing layers
+            if (heatLayer) map.removeLayer(heatLayer);
+            map.removeLayer(markerCluster);
+            markerCluster.clearLayers();
+            hotspotLayer.clearLayers();
+            
+            // Always render hotspots
+            renderHotspots(data.hotspots);
+            
+            // Render incidents based on view type
+            if (viewType === 'heatmap' && data.incidents.length > 0) {
+                const heatData = data.incidents.map(i => [i.lat, i.lon, i.weight / 10]);
+                heatLayer = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 17
+                }).addTo(map);
+            } else if (viewType === 'icon' && data.incidents.length > 0) {
+                const colorMap = {
+                    'shooting': 'red', 'homicide': 'black', 'assault': 'darkred',
+                    'robbery': 'purple', 'petty_theft': 'orange', 'vandalism': 'yellow',
+                    'od': 'blue', 'larceny_auto': 'brown'
+                };
+                
+                data.incidents.forEach(incident => {
+                    const color = colorMap[incident.type] || 'gray';
+                    L.circleMarker([incident.lat, incident.lon], {
+                        radius: 5,
+                        fillColor: color,
+                        color: color,
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.7
+                    }).bindPopup(`<b>${incident.type.replace('_', ' ').toUpperCase()}</b><br>Weight: ${incident.weight}`)
+                    .addTo(markerCluster);
+                });
+                
+                map.addLayer(markerCluster);
+            }
+            
+            // Add entities
+            if (data.entities) {
+                data.entities.forEach(entity => {
+                    const icon = entity.type === 'hospital' ? '🏥' : entity.type === 'funeral' ? '⚰️' : '📍';
+                    L.marker([entity.lat, entity.lon], {
+                        icon: L.divIcon({
+                            html: icon,
+                            className: 'entity-marker',
+                            iconSize: [20, 20]
+                        })
+                    }).bindPopup(`<b>${entity.name}</b><br>${entity.type}`)
+                    .addTo(map);
+                });
+            }
+        }
+
+        function renderHotspots(hotspots) {
+            hotspots.forEach(hotspot => {
+                const circle = L.circle([hotspot.lat, hotspot.lon], {
+                    radius: hotspot.radius,
+                    fillColor: hotspot.severity === 'critical' ? '#e74c3c' : hotspot.severity === 'high' ? '#f39c12' : '#f1c40f',
+                    color: hotspot.severity === 'critical' ? '#e74c3c' : hotspot.severity === 'high' ? '#f39c12' : '#f1c40f',
+                    fillOpacity: 0.3,
+                    weight: 3
+                });
+                
+                const popupContent = createHotspotPopup(hotspot);
+                circle.bindPopup(popupContent, { maxWidth: 300 });
+                circle.addTo(hotspotLayer);
+            });
+        }
+
+        function createHotspotPopup(hotspot) {
+            const crimeDisplay = hotspot.crime_type.replace('_', ' ').toUpperCase();
+            
+            const popup = $('<div class="hotspot-popup"></div>');
+            popup.append(`<div class="hotspot-header">${hotspot.description}</div>`);
+            popup.append(`<span class="hotspot-severity severity-${hotspot.severity}">${hotspot.severity.toUpperCase()}</span>`);
+            popup.append(`
+                <div class="hotspot-stats">
+                    <strong>Crime Type:</strong> ${crimeDisplay}<br>
+                    <strong>Active Incidents:</strong> ${hotspot.incident_count}<br>
+                    <strong>Threat Level:</strong> ${hotspot.total_weight}/100
+                </div>
+            `);
+            
+            popup.append('<div style="margin-top: 10px; font-weight: bold;">Targeted Actions (50% cost):</div>');
+            
+            const actions = [
+                { id: 'sweep_hotspot', name: 'Deploy Sweep ($2.5M)', cost: 2.5, pf: 15 },
+                { id: 'increase_patrols', name: 'Station Patrol ($1.5M)', cost: 1.5, pf: 8 },
+                { id: 'community_policing', name: 'Community Outreach ($1M)', cost: 1, pf: -5 }
+            ];
+            
+            actions.forEach(action => {
+                const btn = $(`<button class="hotspot-action-btn">${action.name}</button>`);
+                btn.on('click', function(e) {
+                    e.stopPropagation();
+                    takeHotspotAction(action.id, hotspot.id);
+                });
+                popup.append(btn);
+            });
+            
+            return popup[0];
+        }
+
+        function takeHotspotAction(actionId, hotspotId) {
+            const locality = $('#locality').val();
+            
+            $.ajax({
+                url: `/${locality}/hotspot_action`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ action: actionId, hotspot_id: hotspotId }),
+                success: function(data) {
+                    if (data.pulse_events && data.pulse_events.length > 0) {
+                        data.pulse_events.forEach(text => showPulseEvent(text));
+                    }
+                    
+                    if (data.success) {
+                        $('#log').prepend(`<p><strong>Hotspot Action:</strong><br>${data.message}</p>`);
+                    } else {
+                        $('#log').prepend(`<p style="color: orange;"><strong>Action Failed:</strong><br>${data.message}</p>`);
+                    }
+                    
+                    updateMetricWithAnimation('budget', data.budget, prevMetrics.budget);
+                    updateMetricWithAnimation('reputation', data.reputation, prevMetrics.reputation);
+                    updateMetricWithAnimation('backlash', data.backlash, prevMetrics.backlash);
+                    updateMetricWithAnimation('police-force', data.police_force, prevMetrics.police_force);
+                    
+                    prevMetrics = {
+                        budget: data.budget,
+                        reputation: data.reputation,
+                        backlash: data.backlash,
+                        police_force: data.police_force
+                    };
+                    
+                    updateStabilityProgress(data.reputation, data.backlash, data.budget);
+                    updateMap();
+                    
+                    if (data.triggered_major_event) {
+                        handleMajorEvent(data.triggered_major_event);
+                    }
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON || { error: 'Unknown error' };
+                    $('#log').prepend(`<p style="color: red;"><strong>Error:</strong> ${error.error}</p>`);
                 }
             });
         }
@@ -847,13 +1083,6 @@
                 });
             }
         }
-        
-        function updateMap() {
-            const locality = $('#locality').val();
-            const crimeType = $('#crime-type-filter').val();
-            const viewType = $('input[name="view_type"]:checked').val();
-            loadMap(locality, crimeType, viewType);
-        }
 
         $(document).ready(function() {
             const tutorialCompleted = localStorage.getItem('tutorial_completed');
@@ -862,10 +1091,9 @@
                 $('#tutorial-modal').css('display', 'flex');
             }
             
-            updateMap();
+            initMap();
             $('#locality, #crime-type-filter, input[name="view_type"]').on('change', updateMap);
             
-            // Action Log Toggle
             $('#log-toggle').on('click', function() {
                 $('#log-slideout').toggleClass('open');
                 const isOpen = $('#log-slideout').hasClass('open');

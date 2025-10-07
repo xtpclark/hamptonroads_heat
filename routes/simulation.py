@@ -333,6 +333,279 @@ def get_map(locality):
         'top_crimes': top_crimes
     })
 
+@sim_bp.route('/<locality>/map_data')
+def get_map_data(locality):
+    """Returns JSON data for client-side map rendering instead of static HTML."""
+    crime_type = request.args.get('crime_type', 'all')
+    
+    with engine.connect() as conn:
+        # Get incidents
+        params = {'loc': locality}
+        query_str = "SELECT id, lat, lon, weight, type FROM incidents WHERE locality = :loc"
+        if crime_type != 'all':
+            query_str += " AND type = :crime_type"
+            params['crime_type'] = crime_type
+        
+        incidents = pd.read_sql(text(query_str), engine, params=params)
+        
+        # Get entities
+        entities_query = text("""
+            SELECT type, name, ST_Y(geometry) as lat, ST_X(geometry) as lon 
+            FROM entities WHERE locality = :loc
+        """)
+        entities = pd.read_sql(entities_query, engine, params={'loc': locality})
+        
+        # Calculate active hotspots from current incident data
+        hotspots = []
+        for crime_hotspot in CRIME_HOTSPOTS:
+            if crime_hotspot.get('locality') != locality:
+                continue
+            
+            center_lat, center_lon = crime_hotspot['center_coords']
+            radius = crime_hotspot.get('radius', 0.01)
+            crime_type_filter = crime_hotspot['crime_type']
+            
+            # Count incidents in this hotspot area
+            hotspot_incidents = incidents[
+                (incidents['type'] == crime_type_filter) &
+                (incidents['lat'].between(center_lat - radius, center_lat + radius)) &
+                (incidents['lon'].between(center_lon - radius, center_lon + radius))
+            ]
+            
+            if len(hotspot_incidents) > 0:
+                total_weight = hotspot_incidents['weight'].sum()
+                severity = 'critical' if total_weight > 40 else 'high' if total_weight > 20 else 'moderate'
+                
+                hotspots.append({
+                    'id': crime_hotspot.get('id', f"{crime_type_filter}_{len(hotspots)}"),
+                    'lat': center_lat,
+                    'lon': center_lon,
+                    'radius': radius * 111000,  # Convert to meters (approx)
+                    'crime_type': crime_type_filter,
+                    'incident_count': len(hotspot_incidents),
+                    'total_weight': int(total_weight),
+                    'severity': severity,
+                    'description': crime_hotspot.get('description', f"{crime_type_filter.replace('_', ' ').title()} Hotspot")
+                })
+        
+        # Get top crimes
+        top_crimes_result = conn.execute(text(
+            "SELECT type, COUNT(*) as crime_count FROM incidents WHERE locality = :loc GROUP BY type ORDER BY crime_count DESC LIMIT 5"
+        ), {'loc': locality}).fetchall()
+        top_crimes = [{'type': row[0], 'count': row[1]} for row in top_crimes_result]
+        
+        # Get funeral load
+        funeral_query = text("""
+            SELECT e.name, COUNT(i.id) as services 
+            FROM entities e 
+            LEFT JOIN incidents i ON e.name = i.funeral_id AND i.type='homicide' 
+            WHERE e.type='funeral' 
+            GROUP BY e.name
+        """)
+        funeral_load_df = pd.read_sql(funeral_query, engine)
+    
+    return jsonify({
+        'incidents': incidents.to_dict('records'),
+        'entities': entities.to_dict('records'),
+        'hotspots': hotspots,
+        'top_crimes': top_crimes,
+        'funeral_load': funeral_load_df.set_index('name')['services'].to_dict() if not funeral_load_df.empty else {},
+        'center': [36.85, -76.28]  # Norfolk center
+    })
+
+@sim_bp.route('/<locality>/hotspot_action', methods=['POST'])
+def take_hotspot_action(locality):
+    """Handle targeted action on a specific hotspot."""
+    payload = request.json
+    action_id = payload.get('action')
+    hotspot_id = payload.get('hotspot_id')
+    
+    if not action_id or not hotspot_id:
+        return jsonify({'error': 'Missing action or hotspot_id'}), 400
+    
+    # Get current state
+    with engine.connect() as conn:
+        result = conn.execute(text(
+            "SELECT budget, backlash, reputation, police_force FROM sim_states ORDER BY id DESC LIMIT 1"
+        )).fetchone()
+    
+    budget, backlash, reputation, police_force = result or (100.0, 0.0, 50.0, 100.0)
+    budget, backlash, reputation, police_force = float(budget), float(backlash), float(reputation), float(police_force)
+    
+    # RUN SIMULATION TICK FIRST (just like regular actions)
+    pulse_outcomes, metric_deltas, triggered_major_event = run_simulation_tick(
+        locality, reputation, backlash, budget
+    )
+    
+    # Apply simulation deltas
+    budget += metric_deltas['budget']
+    reputation += metric_deltas['reputation']
+    backlash += metric_deltas['backlash']
+    
+    # Regenerate police force
+    police_force = min(100.0, police_force + 3.0)
+    
+    # Find the hotspot definition
+    hotspot_def = next((h for h in CRIME_HOTSPOTS if h.get('id', '') == hotspot_id), None)
+    if not hotspot_def:
+        return jsonify({'error': 'Hotspot not found'}), 404
+    
+    action_def = PLAYER_ACTIONS.get(action_id)
+    if not action_def:
+        return jsonify({'error': 'Action not found'}), 404
+    
+    # Get action cost (50% of normal for targeted action)
+    cost = action_def.get('cost', 0.0) * 0.5
+    
+    # Determine police force cost from action handler or default
+    if action_id == 'sweep_hotspot':
+        police_force_cost = 15
+    elif action_id == 'increase_patrols':
+        police_force_cost = 8
+    elif action_id == 'community_policing':
+        police_force_cost = -5  # Restores police force
+    else:
+        police_force_cost = 10  # Default
+    
+    # Check if we have enough resources
+    if budget < cost:
+        return jsonify({'error': 'Insufficient budget', 'required': cost, 'available': budget}), 400
+    
+    if police_force < police_force_cost and police_force_cost > 0:
+        return jsonify({
+            'success': False,
+            'message': f'Insufficient police force ({police_force:.1f}/100). Need {police_force_cost}.',
+            'budget': budget,
+            'police_force': police_force,
+            'reputation': reputation,
+            'backlash': backlash,
+            'pulse_events': pulse_outcomes  # Include pulse events even on failure
+        }), 200  # Return 200 so frontend can show the message
+    
+    # Apply costs
+    budget -= cost
+    police_force -= police_force_cost
+    police_force = max(0.0, min(100.0, police_force))  # Clamp to 0-100
+    
+    # Find incidents in hotspot area
+    center_lat, center_lon = hotspot_def['center_coords']
+    radius = hotspot_def.get('radius', 0.01)
+    crime_type_filter = hotspot_def['crime_type']
+    
+    with engine.connect() as conn:
+        # Get incidents in hotspot
+        hotspot_query = text("""
+            SELECT id FROM incidents 
+            WHERE locality = :loc 
+            AND type = :crime_type
+            AND lat BETWEEN :lat_min AND :lat_max
+            AND lon BETWEEN :lon_min AND :lon_max
+            AND weight > 1
+        """)
+        
+        incidents = conn.execute(hotspot_query, {
+            'loc': locality,
+            'crime_type': crime_type_filter,
+            'lat_min': center_lat - radius,
+            'lat_max': center_lat + radius,
+            'lon_min': center_lon - radius,
+            'lon_max': center_lon + radius
+        }).fetchall()
+        
+        incident_ids = [row[0] for row in incidents]
+        
+        if not incident_ids:
+            # Save state even for failed action
+            next_turn = conn.execute(text(
+                "SELECT COALESCE(MAX(turn), 0) + 1 FROM sim_states"
+            )).scalar()
+            
+            # Combine pulse outcomes with failure message
+            all_outcomes = pulse_outcomes + [f"No active {crime_type_filter.replace('_', ' ')} incidents in {hotspot_def['description']}"]
+            
+            pd.DataFrame([{
+                'turn': next_turn,
+                'action': f"{action_id}_hotspot_{hotspot_id}_failed",
+                'outcome': '; '.join(all_outcomes),
+                'budget': budget,
+                'backlash': backlash,
+                'reputation': reputation,
+                'police_force': police_force
+            }]).to_sql('sim_states', engine, if_exists='append', index=False)
+            conn.commit()
+            
+            return jsonify({
+                'success': False,
+                'message': f'No active {crime_type_filter.replace("_", " ")} incidents in this hotspot. Resources wasted.',
+                'budget': budget,
+                'police_force': police_force,
+                'reputation': reputation,
+                'backlash': backlash,
+                'incidents_affected': 0,
+                'pulse_events': pulse_outcomes
+            })
+        
+        # Reduce incident weights (more effective than city-wide)
+        reduction_factor = 0.3  # 70% reduction for targeted action
+        update_query = text("""
+            UPDATE incidents 
+            SET weight = GREATEST(1, CAST(weight * :factor AS INTEGER))
+            WHERE id = ANY(:ids)
+        """)
+        
+        result = conn.execute(update_query, {
+            'factor': reduction_factor,
+            'ids': incident_ids
+        })
+        conn.commit()
+        
+        affected_count = result.rowcount
+    
+    # Apply reputation/backlash effects (50% of normal for targeted action)
+    reputation_change = action_def.get('effects', {}).get('reputation', 0) * 0.5
+    backlash_change = action_def.get('effects', {}).get('backlash', 0) * 0.5
+    
+    reputation += reputation_change
+    backlash += backlash_change
+    
+    # Save state
+    with engine.connect() as conn:
+        next_turn = conn.execute(text(
+            "SELECT COALESCE(MAX(turn), 0) + 1 FROM sim_states"
+        )).scalar()
+        
+        # Combine pulse outcomes with action outcome
+        action_outcome = f"Targeted {action_def['name']} at {hotspot_def['description']}: {affected_count} incidents suppressed"
+        all_outcomes = pulse_outcomes + [action_outcome]
+        
+        pd.DataFrame([{
+            'turn': next_turn,
+            'action': f"{action_id}_hotspot_{hotspot_id}",
+            'outcome': '; '.join(all_outcomes),
+            'budget': budget,
+            'backlash': backlash,
+            'reputation': reputation,
+            'police_force': police_force
+        }]).to_sql('sim_states', engine, if_exists='append', index=False)
+        conn.commit()
+    
+    crime_display = crime_type_filter.replace('_', ' ').title()
+    police_cost_text = f"(-{police_force_cost} police force)" if police_force_cost > 0 else f"(+{abs(police_force_cost)} police force)"
+    
+    return jsonify({
+        'success': True,
+        'message': f"Deployed {action_def['name']} to {hotspot_def['description']}: {affected_count} {crime_display} incidents suppressed. {police_cost_text}",
+        'budget': budget,
+        'police_force': police_force,
+        'reputation': reputation,
+        'backlash': backlash,
+        'incidents_affected': affected_count,
+        'cost': cost,
+        'police_force_cost': police_force_cost,
+        'pulse_events': pulse_outcomes,  # Include pulse events
+        'triggered_major_event': triggered_major_event  # Include major events
+    })
+
 @sim_bp.route('/<locality>/action', methods=['POST'])
 def take_action(locality):
     with engine.connect() as conn:

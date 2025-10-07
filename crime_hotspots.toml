@@ -1,140 +1,83 @@
-# crime_hotspots.toml - Updated to match actual Norfolk crime distribution
-# Based on real data: assault (200+), traffic (120), petty_theft (90+), vandalism (82)
-
-# === NORFOLK HOTSPOTS (Primary focus) ===
-
-[[hamptonroads.hotspots]]
-name = "Wards Corner / Tidewater Assault Hotspot"
-locality = "Norfolk"
-crime_type = "assault"
-# Most common crime type in the data (domestic + simple assault = 200 incidents)
-center_coords = [36.905, -76.265]
-radius = 0.02
-base_chance = 0.25
-modifiers = ["backlash"]
+# Enhanced hotspot configuration with unique IDs for targeted actions
+# Each hotspot now has an ID that can be referenced in the UI
+# The [[hamptonroads.hotspots]] syntax creates an array automatically
 
 [[hamptonroads.hotspots]]
-name = "Downtown Traffic Incidents"
-locality = "Norfolk"
-crime_type = "traffic"
-# Second most common (hit & run - property = 120 incidents)
-center_coords = [36.855, -76.29]
-radius = 0.02
-base_chance = 0.20
-modifiers = ["reputation"]
-
-[[hamptonroads.hotspots]]
-name = "Ghent / Colonial Petty Theft"
-locality = "Norfolk"
-crime_type = "petty_theft"
-# Shoplifting + larceny = 90+ incidents
-center_coords = [36.86, -76.29]
-radius = 0.015
-base_chance = 0.22
-modifiers = ["reputation"]
-
-[[hamptonroads.hotspots]]
-name = "Park Place Vandalism Zone"
-locality = "Norfolk"
-crime_type = "vandalism"
-# 82 vandalism incidents
-center_coords = [36.87, -76.28]
-radius = 0.015
-base_chance = 0.18
-modifiers = ["reputation", "backlash"]
-
-[[hamptonroads.hotspots]]
-name = "Downtown / Freemason Auto Larceny"
-locality = "Norfolk"
-crime_type = "larceny_auto"
-# Larceny from/parts from auto = 80+ incidents
-center_coords = [36.855, -76.29]
-radius = 0.015
-base_chance = 0.20
-modifiers = ["reputation"]
-
-[[hamptonroads.hotspots]]
-name = "Huntersville Robbery Zone"
-locality = "Norfolk"
-crime_type = "robbery"
-# Burglary + robbery = 30+ incidents
-center_coords = [36.87, -76.28]
-radius = 0.01
-base_chance = 0.10
-modifiers = ["reputation", "backlash"]
-
-[[hamptonroads.hotspots]]
-name = "Ocean View Drug Activity"
-locality = "Norfolk"
-crime_type = "od"
-# Drug overdose + narcotics = 35+ incidents
-center_coords = [36.91, -76.23]
-radius = 0.02
-base_chance = 0.12
-modifiers = ["reputation"]
-
-[[hamptonroads.hotspots]]
-name = "Little Creek Violent Crime"
+id = "downtown_shooting"
 locality = "Norfolk"
 crime_type = "shooting"
-# RARE in real data (only 3 incidents) - should be infrequent
-center_coords = [36.91, -76.23]
-radius = 0.02
-base_chance = 0.03
-modifiers = ["backlash"]
-
-# === OTHER HAMPTON ROADS CITIES (Secondary) ===
-
-[[hamptonroads.hotspots]]
-name = "Virginia Beach Oceanfront Theft"
-locality = "Virginia Beach"
-crime_type = "petty_theft"
-center_coords = [36.85, -75.97]
-radius = 0.02
+center_coords = [36.875, -76.285]
+radius = 0.015
 base_chance = 0.15
-modifiers = ["reputation"]
+modifiers = ["reputation", "backlash"]
+description = "Downtown Shooting Zone"
 
 [[hamptonroads.hotspots]]
-name = "Chesapeake Greenbrier Auto Larceny"
-locality = "Chesapeake"
-crime_type = "larceny_auto"
-center_coords = [36.78, -76.20]
-radius = 0.03
-base_chance = 0.12
-modifiers = ["reputation"]
-
-[[hamptonroads.hotspots]]
-name = "Portsmouth Olde Towne Assault"
-locality = "Portsmouth"
+id = "waterside_assault"
+locality = "Norfolk"
 crime_type = "assault"
-center_coords = [36.83, -76.30]
-radius = 0.01
-base_chance = 0.14
+center_coords = [36.847, -76.293]
+radius = 0.012
+base_chance = 0.18
 modifiers = ["backlash"]
+description = "Waterside District Assault Hotspot"
 
 [[hamptonroads.hotspots]]
-name = "Newport News Shipyard Vandalism"
-locality = "Newport News"
+id = "ghent_petty_theft"
+locality = "Norfolk"
+crime_type = "petty_theft"
+center_coords = [36.866, -76.286]
+radius = 0.010
+base_chance = 0.22
+modifiers = ["reputation"]
+description = "Ghent Area Petty Crime"
+
+[[hamptonroads.hotspots]]
+id = "ocean_view_vandalism"
+locality = "Norfolk"
 crime_type = "vandalism"
-center_coords = [36.98, -76.42]
-radius = 0.02
+center_coords = [36.908, -76.272]
+radius = 0.018
+base_chance = 0.12
+modifiers = ["backlash"]
+description = "Ocean View Vandalism Zone"
+
+[[hamptonroads.hotspots]]
+id = "military_circle_robbery"
+locality = "Norfolk"
+crime_type = "robbery"
+center_coords = [36.888, -76.256]
+radius = 0.014
 base_chance = 0.10
 modifiers = ["reputation", "backlash"]
+description = "Military Circle Robbery Hotspot"
 
 [[hamptonroads.hotspots]]
-name = "Hampton Drug Offenses"
-locality = "Hampton"
+id = "norview_assault"
+locality = "Norfolk"
+crime_type = "assault"
+center_coords = [36.893, -76.279]
+radius = 0.016
+base_chance = 0.16
+modifiers = ["backlash"]
+description = "Norview District Assault Zone"
+
+[[hamptonroads.hotspots]]
+id = "wards_corner_theft"
+locality = "Norfolk"
+crime_type = "larceny_auto"
+center_coords = [36.882, -76.288]
+radius = 0.013
+base_chance = 0.20
+modifiers = ["reputation"]
+description = "Wards Corner Auto Theft Area"
+
+[[hamptonroads.hotspots]]
+id = "lambert_point_od"
+locality = "Norfolk"
 crime_type = "od"
-center_coords = [37.02, -76.34]
-radius = 0.015
+center_coords = [36.857, -76.310]
+radius = 0.011
 base_chance = 0.08
-modifiers = ["reputation"]
-
-[[hamptonroads.hotspots]]
-name = "Suffolk Downtown Traffic"
-locality = "Suffolk"
-crime_type = "traffic"
-center_coords = [36.72, -76.58]
-radius = 0.01
-base_chance = 0.08
-modifiers = ["reputation"]
+modifiers = ["reputation", "backlash"]
+description = "Lambert's Point Drug Activity"
